@@ -1,0 +1,134 @@
+<Solution>
+  <Folder Name="/Solution Items/">
+    <File Path=".editorconfig" />
+    <File Path="Directory.Build.props" />
+  </Folder>
+  <Folder Name="/src/" />
+  <Folder Name="/src/API/">
+    <Project Path="src/API/FourPrep.Api/FourPrep.Api.csproj" />
+  </Folder>
+  <Folder Name="/src/Common/">
+    <Project Path="src/Common/FourPrep.Common.Application/FourPrep.Common.Application.csproj" />
+    <Project Path="src/Common/FourPrep.Common.Domain/FourPrep.Common.Domain.csproj" />
+    <Project Path="src/Common/FourPrep.Common.Infrastructure/FourPrep.Common.Infrastructure.csproj" />
+    <Project Path="src/Common/FourPrep.Common.Presentation/FourPrep.Common.Presentation.csproj" />
+  </Folder>
+  <Folder Name="/src/Common/tests/">
+    <Project Path="src/Common/tests/FourPrep.Common.Tests/FourPrep.Common.Tests.csproj" />
+    <Project Path="src/Common/tests/FourPrep.Common.UnitTests/FourPrep.Common.UnitTests.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/" />
+  <Folder Name="/src/Modules/Academy/">
+    <Project Path="src/Modules/Academy/FourPrep.Modules.Academy.Application/FourPrep.Modules.Academy.Application.csproj" />
+    <Project Path="src/Modules/Academy/FourPrep.Modules.Academy.Domain/FourPrep.Modules.Academy.Domain.csproj" />
+    <Project Path="src/Modules/Academy/FourPrep.Modules.Academy.Infrastructure/FourPrep.Modules.Academy.Infrastructure.csproj" />
+    <Project Path="src/Modules/Academy/FourPrep.Modules.Academy.Presentation/FourPrep.Modules.Academy.Presentation.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/Academy/test/">
+    <Project Path="src/Modules/Academy/test/FourPrep.Modules.Academy.ArchitectureTests/FourPrep.Modules.Academy.ArchitectureTests.csproj" />
+    <Project Path="src/Modules/Academy/test/FourPrep.Modules.Academy.UnitTests/FourPrep.Modules.Academy.UnitTests.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/Admission/">
+    <Project Path="src/Modules/Admission/FourPrep.Modules.Admission.Application/FourPrep.Modules.Admission.Application.csproj" />
+    <Project Path="src/Modules/Admission/FourPrep.Modules.Admission.Domain/FourPrep.Modules.Admission.Domain.csproj" />
+    <Project Path="src/Modules/Admission/FourPrep.Modules.Admission.Infrastructure/FourPrep.Modules.Admission.Infrastructure.csproj" />
+    <Project Path="src/Modules/Admission/FourPrep.Modules.Admission.Presentation/FourPrep.Modules.Admission.Presentation.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/Admission/test/">
+    <Project Path="src/Modules/Admission/test/FourPrep.Modules.Admission.ArchitectureTests/FourPrep.Modules.Admission.ArchitectureTests.csproj" />
+    <Project Path="src/Modules/Admission/test/FourPrep.Modules.Admission.UnitTests/FourPrep.Modules.Admission.UnitTests.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/Agreement/">
+    <Project Path="src/Modules/Agreement/FourPrep.Modules.Agreement.Application/FourPrep.Modules.Agreement.Application.csproj" />
+    <Project Path="src/Modules/Agreement/FourPrep.Modules.Agreement.Domain/FourPrep.Modules.Agreement.Domain.csproj" />
+    <Project Path="src/Modules/Agreement/FourPrep.Modules.Agreement.Infrastructure/FourPrep.Modules.Agreement.Infrastructure.csproj" />
+    <Project Path="src/Modules/Agreement/FourPrep.Modules.Agreement.Presentation/FourPrep.Modules.Agreement.Presentation.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/Agreement/test/">
+    <Project Path="src/Modules/Agreement/test/FourPrep.Modules.Agreement.ArchitectureTests/FourPrep.Modules.Agreement.ArchitectureTests.csproj" />
+    <Project Path="src/Modules/Agreement/test/FourPrep.Modules.Agreement.UnitTests/FourPrep.Modules.Agreement.UnitTests.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/AI/">
+    <Project Path="src/Modules/AI/FourPrep.Modules.AI.Application/FourPrep.Modules.AI.Application.csproj" />
+    <Project Path="src/Modules/AI/FourPrep.Modules.AI.Domain/FourPrep.Modules.AI.Domain.csproj" />
+    <Project Path="src/Modules/AI/FourPrep.Modules.AI.Infrastructure/FourPrep.Modules.AI.Infrastructure.csproj" />
+    <Project Path="src/Modules/AI/FourPrep.Modules.AI.Presentation/FourPrep.Modules.AI.Presentation.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/AI/test/">
+    <Project Path="src/Modules/AI/test/FourPrep.Modules.AI.ArchitectureTests/FourPrep.Modules.AI.ArchitectureTests.csproj" />
+    <Project Path="src/Modules/AI/test/FourPrep.Modules.AI.UnitTests/FourPrep.Modules.AI.UnitTests.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/Auth/">
+    <Project Path="src/Modules/Auth/FourPrep.Modules.Auth.Application/FourPrep.Modules.Auth.Application.csproj" />
+    <Project Path="src/Modules/Auth/FourPrep.Modules.Auth.Domain/FourPrep.Modules.Auth.Domain.csproj" />
+    <Project Path="src/Modules/Auth/FourPrep.Modules.Auth.Infrastructure/FourPrep.Modules.Auth.Infrastructure.csproj" />
+    <Project Path="src/Modules/Auth/FourPrep.Modules.Auth.Presentation/FourPrep.Modules.Auth.Presentation.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/Auth/test/">
+    <Project Path="src/Modules/Auth/test/FourPrep.Modules.Auth.ArchitectureTests/FourPrep.Modules.Auth.ArchitectureTests.csproj" />
+    <Project Path="src/Modules/Auth/test/FourPrep.Modules.Auth.UnitTests/FourPrep.Modules.Auth.UnitTests.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/Chat/">
+    <Project Path="src/Modules/Chat/FourPrep.Modules.Chat.Application/FourPrep.Modules.Chat.Application.csproj" />
+    <Project Path="src/Modules/Chat/FourPrep.Modules.Chat.Domain/FourPrep.Modules.Chat.Domain.csproj" />
+    <Project Path="src/Modules/Chat/FourPrep.Modules.Chat.Infrastructure/FourPrep.Modules.Chat.Infrastructure.csproj" />
+    <Project Path="src/Modules/Chat/FourPrep.Modules.Chat.Presentation/FourPrep.Modules.Chat.Presentation.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/Chat/test/">
+    <Project Path="src/Modules/Chat/test/FourPrep.Modules.Chat.ArchitectureTests/FourPrep.Modules.Chat.ArchitectureTests.csproj" />
+    <Project Path="src/Modules/Chat/test/FourPrep.Modules.Chat.UnitTests/FourPrep.Modules.Chat.UnitTests.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/Content/">
+    <Project Path="src/Modules/Content/FourPrep.Modules.Content.Application/FourPrep.Modules.Content.Application.csproj" />
+    <Project Path="src/Modules/Content/FourPrep.Modules.Content.Domain/FourPrep.Modules.Content.Domain.csproj" />
+    <Project Path="src/Modules/Content/FourPrep.Modules.Content.Infrastructure/FourPrep.Modules.Content.Infrastructure.csproj" />
+    <Project Path="src/Modules/Content/FourPrep.Modules.Content.Presentation/FourPrep.Modules.Content.Presentation.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/Content/test/">
+    <Project Path="src/Modules/Content/test/FourPrep.Modules.Content.ArchitectureTests/FourPrep.Modules.Content.ArchitectureTests.csproj" />
+    <Project Path="src/Modules/Content/test/FourPrep.Modules.Content.UnitTests/FourPrep.Modules.Content.UnitTests.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/Notification/">
+    <Project Path="src/Modules/Notification/FourPrep.Modules.Notification.Application/FourPrep.Modules.Notification.Application.csproj" />
+    <Project Path="src/Modules/Notification/FourPrep.Modules.Notification.Domain/FourPrep.Modules.Notification.Domain.csproj" />
+    <Project Path="src/Modules/Notification/FourPrep.Modules.Notification.Infrastructure/FourPrep.Modules.Notification.Infrastructure.csproj" />
+    <Project Path="src/Modules/Notification/FourPrep.Modules.Notification.Presentation/FourPrep.Modules.Notification.Presentation.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/Notification/test/">
+    <Project Path="src/Modules/Notification/test/FourPrep.Modules.Notification.ArchitectureTests/FourPrep.Modules.Notification.ArchitectureTests.csproj" />
+    <Project Path="src/Modules/Notification/test/FourPrep.Modules.Notification.UnitTests/FourPrep.Modules.Notification.UnitTests.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/Payment/">
+    <Project Path="src/Modules/Payment/FourPrep.Modules.Payment.Application/FourPrep.Modules.Payment.Application.csproj" />
+    <Project Path="src/Modules/Payment/FourPrep.Modules.Payment.Domain/FourPrep.Modules.Payment.Domain.csproj" />
+    <Project Path="src/Modules/Payment/FourPrep.Modules.Payment.Infrastructure/FourPrep.Modules.Payment.Infrastructure.csproj" />
+    <Project Path="src/Modules/Payment/FourPrep.Modules.Payment.Presentation/FourPrep.Modules.Payment.Presentation.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/Payment/test/">
+    <Project Path="src/Modules/Payment/test/FourPrep.Modules.Payment.ArchitectureTests/FourPrep.Modules.Payment.ArchitectureTests.csproj" />
+    <Project Path="src/Modules/Payment/test/FourPrep.Modules.Payment.UnitTests/FourPrep.Modules.Payment.UnitTests.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/Storage/">
+    <Project Path="src/Modules/Storage/FourPrep.Modules.Storage.Application/FourPrep.Modules.Storage.Application.csproj" />
+    <Project Path="src/Modules/Storage/FourPrep.Modules.Storage.Domain/FourPrep.Modules.Storage.Domain.csproj" />
+    <Project Path="src/Modules/Storage/FourPrep.Modules.Storage.Infrastructure/FourPrep.Modules.Storage.Infrastructure.csproj" />
+    <Project Path="src/Modules/Storage/FourPrep.Modules.Storage.Presentation/FourPrep.Modules.Storage.Presentation.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/Storage/test/">
+    <Project Path="src/Modules/Storage/test/FourPrep.Modules.Storage.ArchitectureTests/FourPrep.Modules.Storage.ArchitectureTests.csproj" />
+    <Project Path="src/Modules/Storage/test/FourPrep.Modules.Storage.UnitTests/FourPrep.Modules.Storage.UnitTests.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/Student/">
+    <Project Path="src/Modules/Student/FourPrep.Modules.Student.Application/FourPrep.Modules.Student.Application.csproj" />
+    <Project Path="src/Modules/Student/FourPrep.Modules.Student.Domain/FourPrep.Modules.Student.Domain.csproj" />
+    <Project Path="src/Modules/Student/FourPrep.Modules.Student.Infrastructure/FourPrep.Modules.Student.Infrastructure.csproj" />
+    <Project Path="src/Modules/Student/FourPrep.Modules.Student.Presentation/FourPrep.Modules.Student.Presentation.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/Student/test/">
+    <Project Path="src/Modules/Student/test/FourPrep.Modules.Student.ArchitectureTests/FourPrep.Modules.Student.ArchitectureTests.csproj" />
+    <Project Path="src/Modules/Student/test/FourPrep.Modules.Student.UnitTests/FourPrep.Modules.Student.UnitTests.csproj" />
+  </Folder>
+  <Folder Name="/test/">
+    <Project Path="test/FourPrep.ArchitectureTests/FourPrep.ArchitectureTests.csproj" />
+  </Folder>
+</Solution>

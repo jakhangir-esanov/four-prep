@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Common\tests\FourPrep.Common.Tests\FourPrep.Common.Tests.csproj" />
+    <ProjectReference Include="..\..\src\API\FourPrep.Api\FourPrep.Api.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+</Project>

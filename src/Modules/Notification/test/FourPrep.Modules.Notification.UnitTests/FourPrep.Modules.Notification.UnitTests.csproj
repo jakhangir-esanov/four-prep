@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\..\Common\tests\FourPrep.Common.Tests\FourPrep.Common.Tests.csproj" />
+    <ProjectReference Include="..\..\FourPrep.Modules.Notification.Application\FourPrep.Modules.Notification.Application.csproj" />
+    <ProjectReference Include="..\..\FourPrep.Modules.Notification.Domain\FourPrep.Modules.Notification.Domain.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+</Project>

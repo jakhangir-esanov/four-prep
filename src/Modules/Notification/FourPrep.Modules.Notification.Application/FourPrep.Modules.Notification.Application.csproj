@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\Common\FourPrep.Common.Application\FourPrep.Common.Application.csproj" />
+    <ProjectReference Include="..\FourPrep.Modules.Notification.Domain\FourPrep.Modules.Notification.Domain.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="FourPrep.Modules.Notification.UnitTests" />
+  </ItemGroup>
+</Project>

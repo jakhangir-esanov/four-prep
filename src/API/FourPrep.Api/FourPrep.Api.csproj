@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <ItemGroup>
+	  <PackageReference Include="AspNetCore.HealthChecks.UI.Client" Version="9.0.0" />
+	  <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.6" />
+	  <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="9.0.4" />
+	  <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.11" />
+	  <PackageReference Include="Serilog.AspNetCore" Version="9.0.0" />
+	  <PackageReference Include="Serilog.Sinks.Seq" Version="9.0.0" />
+	  <PackageReference Include="Swashbuckle.AspNetCore" Version="8.1.1" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\Modules\Auth\FourPrep.Modules.Auth.Infrastructure\FourPrep.Modules.Auth.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\Modules\Storage\FourPrep.Modules.Storage.Infrastructure\FourPrep.Modules.Storage.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\Modules\Notification\FourPrep.Modules.Notification.Infrastructure\FourPrep.Modules.Notification.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\Modules\Chat\FourPrep.Modules.Chat.Infrastructure\FourPrep.Modules.Chat.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\Modules\Payment\FourPrep.Modules.Payment.Infrastructure\FourPrep.Modules.Payment.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\Modules\Student\FourPrep.Modules.Student.Infrastructure\FourPrep.Modules.Student.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\Modules\Content\FourPrep.Modules.Content.Infrastructure\FourPrep.Modules.Content.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\Modules\AI\FourPrep.Modules.AI.Infrastructure\FourPrep.Modules.AI.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\Modules\Academy\FourPrep.Modules.Academy.Infrastructure\FourPrep.Modules.Academy.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\Modules\Agreement\FourPrep.Modules.Agreement.Infrastructure\FourPrep.Modules.Agreement.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\Modules\Admission\FourPrep.Modules.Admission.Infrastructure\FourPrep.Modules.Admission.Infrastructure.csproj" />
+  </ItemGroup>
+</Project>

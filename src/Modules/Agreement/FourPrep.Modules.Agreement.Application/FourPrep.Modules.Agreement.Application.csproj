@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\Common\FourPrep.Common.Application\FourPrep.Common.Application.csproj" />
+    <ProjectReference Include="..\FourPrep.Modules.Agreement.Domain\FourPrep.Modules.Agreement.Domain.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="FourPrep.Modules.Agreement.UnitTests" />
+  </ItemGroup>
+</Project>
