@@ -9,4 +9,7 @@ public static class Roles
     public const string MentorAdmin = "mentor_admin";
     public const string ContentAdmin = "content_admin";
     public const string SuperAdmin = "super_admin";
+
+    public static readonly IReadOnlyList<string> All =
+        [Student, Parent, Mentor, Teacher, MentorAdmin, ContentAdmin, SuperAdmin];
 }
