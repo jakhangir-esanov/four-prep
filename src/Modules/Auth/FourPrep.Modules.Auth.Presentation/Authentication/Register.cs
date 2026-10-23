@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Routing;
+using FourPrep.Common.Domain.Authorization;
 using FourPrep.Common.Presentation.Results;
 using FourPrep.Common.Presentation.Endpoints;
 using FourPrep.Modules.Auth.Application.Authentication;
@@ -24,7 +25,8 @@ internal sealed class Register : IEndpoint
                 request.Username,
                 request.Email,
                 request.PhoneNumber,
-                request.Password);
+                request.Password,
+                Roles.Student);
 
             var result = await sender.Send(command);
 

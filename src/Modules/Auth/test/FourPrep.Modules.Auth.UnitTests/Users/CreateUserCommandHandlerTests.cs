@@ -13,7 +13,7 @@ public class CreateUserCommandHandlerTests
     public async Task Handle_CreatesAnActiveAccountWithTheRole()
     {
         var identity = new FakeIdentityProviderClient();
-        var handler = new CreateUserCommandHandler(identity);
+        var handler = new CreateUserCommandHandler(identity, new FakeStudentService());
 
         var result = await handler.Handle(Command, default);
 
@@ -30,7 +30,7 @@ public class CreateUserCommandHandlerTests
     public async Task Handle_ReportsATakenUsernameWithoutAssigningARole()
     {
         var identity = new FakeIdentityProviderClient { CreateFailure = UserErrors.UsernameTaken };
-        var handler = new CreateUserCommandHandler(identity);
+        var handler = new CreateUserCommandHandler(identity, new FakeStudentService());
 
         var result = await handler.Handle(Command, default);
 
@@ -42,7 +42,7 @@ public class CreateUserCommandHandlerTests
     public async Task Handle_DeletesTheAccountWhenTheRoleIsRefused()
     {
         var identity = new FakeIdentityProviderClient { AssignRoleFailure = IdentityProviderErrors.RoleNotFound };
-        var handler = new CreateUserCommandHandler(identity);
+        var handler = new CreateUserCommandHandler(identity, new FakeStudentService());
 
         var result = await handler.Handle(Command, default);
 

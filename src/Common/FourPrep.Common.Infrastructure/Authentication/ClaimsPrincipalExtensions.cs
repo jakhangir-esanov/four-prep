@@ -23,4 +23,8 @@ public static class ClaimsPrincipalExtensions
 
         return Guid.TryParse(userId, out Guid parsedUserId) ? parsedUserId : null;
     }
+
+    public static string GetUserName(this ClaimsPrincipal? principal) =>
+        principal?.FindFirst(CustomClaims.PreferredUsername)?.Value ??
+        throw new ApplicationException("User name is unavailable");
 }

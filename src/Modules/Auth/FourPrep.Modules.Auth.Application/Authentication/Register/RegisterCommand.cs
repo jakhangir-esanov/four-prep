@@ -2,21 +2,24 @@ namespace FourPrep.Modules.Auth.Application.Authentication.Register;
 
 using FourPrep.Common.Domain;
 using FourPrep.Common.Application.Clock;
-using FourPrep.Common.Domain.Authorization;
 using FourPrep.Common.Application.Messaging;
+using FourPrep.Modules.Auth.Application.Users;
 using FourPrep.Modules.Auth.Domain.UserSessions;
 using FourPrep.Modules.Auth.Application.Authentication;
 using FourPrep.Modules.Auth.Application.Abstractions.Data;
 using FourPrep.Modules.Auth.Application.Abstractions.Identity;
+using FourPrep.Modules.Auth.Application.Abstractions.Students;
 
 public sealed record RegisterCommand(
     string Username,
     string Email,
     string? PhoneNumber,
-    string Password) : ICommand<AuthTokenResponse>;
+    string Password,
+    string Role) : ICommand<AuthTokenResponse>;
 
 internal sealed class RegisterCommandHandler(
     IIdentityProviderClient identityProviderClient,
+    IStudentService studentService,
     IUserSessionRepository sessionRepository,
     IUnitOfWork unitOfWork,
     IDateTimeProvider dateTimeProvider) : ICommandHandler<RegisterCommand, AuthTokenResponse>
@@ -37,15 +40,17 @@ internal sealed class RegisterCommandHandler(
             return Result.Failure<AuthTokenResponse>(createResult.Error);
         }
 
-        var roleAssigned = await identityProviderClient.AssignRealmRoleAsync(
-            Guid.Parse(createResult.Data),
-            Roles.Student,
+        var roleGranted = await AccountRoles.GrantAsync(
+            identityProviderClient,
+            studentService,
+            createResult.Data,
+            request.Username,
+            request.Role,
             cancellationToken);
 
-        if (roleAssigned.IsFailure)
+        if (roleGranted.IsFailure)
         {
-            await identityProviderClient.DeleteUserAsync(createResult.Data, cancellationToken);
-            return Result.Failure<AuthTokenResponse>(roleAssigned.Error);
+            return Result.Failure<AuthTokenResponse>(roleGranted.Error);
         }
 
         var loginResult = await identityProviderClient.LoginAsync(request.Username, request.Password, cancellationToken);

@@ -63,6 +63,7 @@
     <Project Path="src/Modules/Auth/FourPrep.Modules.Auth.Domain/FourPrep.Modules.Auth.Domain.csproj" />
     <Project Path="src/Modules/Auth/FourPrep.Modules.Auth.Infrastructure/FourPrep.Modules.Auth.Infrastructure.csproj" />
     <Project Path="src/Modules/Auth/FourPrep.Modules.Auth.Presentation/FourPrep.Modules.Auth.Presentation.csproj" />
+    <Project Path="src/Modules/Auth/FourPrep.Modules.Auth.Student/FourPrep.Modules.Auth.Student.csproj" />
   </Folder>
   <Folder Name="/src/Modules/Auth/test/">
     <Project Path="src/Modules/Auth/test/FourPrep.Modules.Auth.ArchitectureTests/FourPrep.Modules.Auth.ArchitectureTests.csproj" />
@@ -120,6 +121,7 @@
   </Folder>
   <Folder Name="/src/Modules/Student/">
     <Project Path="src/Modules/Student/FourPrep.Modules.Student.Application/FourPrep.Modules.Student.Application.csproj" />
+    <Project Path="src/Modules/Student/FourPrep.Modules.Student.Auth/FourPrep.Modules.Student.Auth.csproj" />
     <Project Path="src/Modules/Student/FourPrep.Modules.Student.Domain/FourPrep.Modules.Student.Domain.csproj" />
     <Project Path="src/Modules/Student/FourPrep.Modules.Student.Infrastructure/FourPrep.Modules.Student.Infrastructure.csproj" />
     <Project Path="src/Modules/Student/FourPrep.Modules.Student.Presentation/FourPrep.Modules.Student.Presentation.csproj" />

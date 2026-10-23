@@ -3,6 +3,7 @@ namespace FourPrep.Modules.Auth.Application.Users.CreateUser;
 using FourPrep.Common.Domain;
 using FourPrep.Common.Application.Messaging;
 using FourPrep.Modules.Auth.Application.Abstractions.Identity;
+using FourPrep.Modules.Auth.Application.Abstractions.Students;
 
 public sealed record CreateUserCommand(
     string Username,
@@ -12,7 +13,8 @@ public sealed record CreateUserCommand(
     string Role) : ICommand<Guid>;
 
 internal sealed class CreateUserCommandHandler(
-    IIdentityProviderClient identityProviderClient) : ICommandHandler<CreateUserCommand, Guid>
+    IIdentityProviderClient identityProviderClient,
+    IStudentService studentService) : ICommandHandler<CreateUserCommand, Guid>
 {
     public async Task<Result<Guid>> Handle(CreateUserCommand request, CancellationToken cancellationToken)
     {
@@ -30,15 +32,16 @@ internal sealed class CreateUserCommandHandler(
             return Result.Failure<Guid>(createResult.Error);
         }
 
-        var userId = Guid.Parse(createResult.Data);
+        var roleGranted = await AccountRoles.GrantAsync(
+            identityProviderClient,
+            studentService,
+            createResult.Data,
+            request.Username,
+            request.Role,
+            cancellationToken);
 
-        var roleAssigned = await identityProviderClient.AssignRealmRoleAsync(userId, request.Role, cancellationToken);
-        if (roleAssigned.IsFailure)
-        {
-            await identityProviderClient.DeleteUserAsync(createResult.Data, cancellationToken);
-            return Result.Failure<Guid>(roleAssigned.Error);
-        }
-
-        return Result.Success(userId);
+        return roleGranted.IsFailure
+            ? Result.Failure<Guid>(roleGranted.Error)
+            : Result.Success(Guid.Parse(createResult.Data));
     }
 }

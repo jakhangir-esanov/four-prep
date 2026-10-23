@@ -1,6 +1,7 @@
 namespace FourPrep.Modules.Auth.UnitTests.Authentication;
 
 using FourPrep.Modules.Auth.Domain.Users;
+using FourPrep.Common.Domain.Authorization;
 using FourPrep.Modules.Auth.Application.Authentication.Register;
 
 public class RegisterCommandValidatorTests
@@ -39,5 +40,5 @@ public class RegisterCommandValidatorTests
     }
 
     private static RegisterCommand Command(string username) =>
-        new(username, "user@example.com", "+967771234567", "Passw0rd!23");
+        new(username, "user@example.com", "+967771234567", "Passw0rd!23", Roles.Student);
 }

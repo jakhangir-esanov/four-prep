@@ -9,32 +9,49 @@ using FourPrep.Modules.Auth.Application.Authentication.Register;
 
 public class RegisterCommandHandlerTests
 {
-    private static readonly RegisterCommand Command =
-        new("aziz.karimov", "aziz@example.com", "+998901234567", "Passw0rd!23");
+    private static RegisterCommand Command(string role) =>
+        new("Aziz.Karimov", "aziz@example.com", "+998901234567", "Passw0rd!23", role);
 
     [Fact]
-    public async Task Handle_CreatesAStudentAndSignsThemIn()
+    public async Task Handle_CreatesAStudentWithAProfileAndSignsThemIn()
     {
         var identity = new FakeIdentityProviderClient();
-        var (handler, sessions, unitOfWork) = Build(identity);
+        var students = new FakeStudentService();
+        var (handler, sessions, unitOfWork) = Build(identity, students);
 
-        var result = await handler.Handle(Command, default);
+        var result = await handler.Handle(Command(Roles.Student), default);
 
         Assert.True(result.IsSuccess);
         var user = Assert.Single(identity.Users.Values);
         Assert.Equal((user.Id, Roles.Student), Assert.Single(identity.AssignedRoles));
+        Assert.Equal((user.Id, "aziz.karimov"), Assert.Single(students.Created));
         Assert.Equal("access-token", result.Data.AccessToken);
         Assert.Single(sessions.Inserted);
         Assert.Equal(1, unitOfWork.SaveCount);
     }
 
     [Fact]
+    public async Task Handle_CreatesAParentWithoutAStudentProfile()
+    {
+        var identity = new FakeIdentityProviderClient();
+        var students = new FakeStudentService();
+        var (handler, _, _) = Build(identity, students);
+
+        var result = await handler.Handle(Command(Roles.Parent), default);
+
+        Assert.True(result.IsSuccess);
+        var user = Assert.Single(identity.Users.Values);
+        Assert.Equal((user.Id, Roles.Parent), Assert.Single(identity.AssignedRoles));
+        Assert.Empty(students.Created);
+    }
+
+    [Fact]
     public async Task Handle_ReportsATakenUsernameWithoutAssigningARole()
     {
         var identity = new FakeIdentityProviderClient { CreateFailure = UserErrors.UsernameTaken };
-        var (handler, sessions, _) = Build(identity);
+        var (handler, sessions, _) = Build(identity, new FakeStudentService());
 
-        var result = await handler.Handle(Command, default);
+        var result = await handler.Handle(Command(Roles.Student), default);
 
         Assert.Equal(UserErrors.UsernameTaken, result.Error);
         Assert.Empty(identity.AssignedRoles);
@@ -42,20 +59,37 @@ public class RegisterCommandHandlerTests
     }
 
     [Fact]
-    public async Task Handle_DeletesTheAccountWhenTheStudentRoleIsRefused()
+    public async Task Handle_DeletesTheAccountWhenTheRoleIsRefused()
     {
         var identity = new FakeIdentityProviderClient { AssignRoleFailure = IdentityProviderErrors.RoleNotFound };
-        var (handler, sessions, _) = Build(identity);
+        var students = new FakeStudentService();
+        var (handler, sessions, _) = Build(identity, students);
 
-        var result = await handler.Handle(Command, default);
+        var result = await handler.Handle(Command(Roles.Student), default);
 
         Assert.Equal(IdentityProviderErrors.RoleNotFound, result.Error);
+        Assert.Empty(identity.Users);
+        Assert.Empty(students.Created);
+        Assert.Empty(sessions.Inserted);
+    }
+
+    [Fact]
+    public async Task Handle_DeletesTheAccountWhenTheStudentProfileFails()
+    {
+        var identity = new FakeIdentityProviderClient();
+        var students = new FakeStudentService { CreateFailure = IdentityProviderErrors.OperationFailed };
+        var (handler, sessions, _) = Build(identity, students);
+
+        var result = await handler.Handle(Command(Roles.Student), default);
+
+        Assert.Equal(IdentityProviderErrors.OperationFailed, result.Error);
         Assert.Empty(identity.Users);
         Assert.Empty(sessions.Inserted);
     }
 
     private static (RegisterCommandHandler, FakeUserSessionRepository, FakeUnitOfWork) Build(
-        FakeIdentityProviderClient identity)
+        FakeIdentityProviderClient identity,
+        FakeStudentService students)
     {
         identity.LoginResult = Result.Success(new IdentityTokenResult(
             "access-token",
@@ -69,7 +103,7 @@ public class RegisterCommandHandlerTests
 
         var sessions = new FakeUserSessionRepository();
         var unitOfWork = new FakeUnitOfWork();
-        var handler = new RegisterCommandHandler(identity, sessions, unitOfWork, new FakeClock());
+        var handler = new RegisterCommandHandler(identity, students, sessions, unitOfWork, new FakeClock());
 
         return (handler, sessions, unitOfWork);
     }

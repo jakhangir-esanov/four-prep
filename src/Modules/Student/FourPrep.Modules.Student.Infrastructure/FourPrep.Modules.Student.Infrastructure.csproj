@@ -3,6 +3,7 @@
     <ProjectReference Include="..\..\..\Common\FourPrep.Common.Infrastructure\FourPrep.Common.Infrastructure.csproj" />
     <ProjectReference Include="..\..\..\Common\FourPrep.Common.Presentation\FourPrep.Common.Presentation.csproj" />
     <ProjectReference Include="..\FourPrep.Modules.Student.Application\FourPrep.Modules.Student.Application.csproj" />
+    <ProjectReference Include="..\FourPrep.Modules.Student.Auth\FourPrep.Modules.Student.Auth.csproj" />
     <ProjectReference Include="..\FourPrep.Modules.Student.Presentation\FourPrep.Modules.Student.Presentation.csproj" />
   </ItemGroup>
 </Project>

@@ -11,6 +11,7 @@ using FourPrep.Modules.Auth.Domain.IdentityProvider;
 using FourPrep.Modules.Auth.Application.Users.GetUser;
 using FourPrep.Modules.Auth.Application.Abstractions.Data;
 using FourPrep.Modules.Auth.Application.Abstractions.Identity;
+using FourPrep.Modules.Auth.Application.Abstractions.Students;
 using FourPrep.Modules.Auth.Application.Abstractions.Authentication;
 
 internal sealed class FakeClock : IDateTimeProvider
@@ -52,6 +53,24 @@ internal sealed class FakeUserSessionRepository : IUserSessionRepository
     {
         RevokedUserIds.Add(userId);
         return Task.CompletedTask;
+    }
+}
+
+internal sealed class FakeStudentService : IStudentService
+{
+    public List<(Guid UserId, string UserName)> Created { get; } = [];
+
+    public Error? CreateFailure { get; init; }
+
+    public Task<Result<Guid>> CreateStudentAsync(Guid userId, string userName, CancellationToken cancellationToken = default)
+    {
+        if (CreateFailure is not null)
+        {
+            return Task.FromResult(Result.Failure<Guid>(CreateFailure));
+        }
+
+        Created.Add((userId, userName));
+        return Task.FromResult(Result.Success(Guid.NewGuid()));
     }
 }
 
