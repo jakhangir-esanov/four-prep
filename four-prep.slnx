@@ -15,7 +15,6 @@
   </Folder>
   <Folder Name="/src/Common/tests/">
     <Project Path="src/Common/tests/FourPrep.Common.Tests/FourPrep.Common.Tests.csproj" />
-    <Project Path="src/Common/tests/FourPrep.Common.UnitTests/FourPrep.Common.UnitTests.csproj" />
   </Folder>
   <Folder Name="/src/Modules/" />
   <Folder Name="/src/Modules/Academy/">

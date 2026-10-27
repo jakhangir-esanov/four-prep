@@ -10,7 +10,4 @@
   <ItemGroup>
     <ProjectReference Include="..\FourPrep.Common.Application\FourPrep.Common.Application.csproj" />
   </ItemGroup>
-  <ItemGroup>
-    <InternalsVisibleTo Include="FourPrep.Common.UnitTests" />
-  </ItemGroup>
 </Project>

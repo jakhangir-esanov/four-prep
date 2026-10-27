@@ -1,15 +1,11 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <ItemGroup>
-    <PackageReference Include="AnyAscii" Version="0.3.3" />
     <PackageReference Include="Dapper" Version="2.1.66" />
-	<PackageReference Include="DocumentFormat.OpenXml" Version="3.3.0" />
 	<PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="11.11.0" />
 	<PackageReference Include="MediatR" Version="12.5.0" />
-	<PackageReference Include="Microsoft.AspNetCore.Http.Features" Version="5.0.17" />
 	<PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.4" />
 	<PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
 	<PackageReference Include="Serilog" Version="4.2.0" />
-	<PackageReference Include="Ulid" Version="1.4.1" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\FourPrep.Common.Domain\FourPrep.Common.Domain.csproj" />

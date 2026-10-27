@@ -63,8 +63,6 @@ public sealed class PagingRequest<T> : IPagingRequest
         init => _sortOrder = value is 1 or -1 ? value : 1;
     }
 
-    public int Page => First / Rows + 1;
-    public int PageSize => Rows;
     public string SortBy => SortField;
     public string SortDirection => SortOrder == -1 ? "desc" : "asc";
 }

@@ -48,7 +48,6 @@ builder.Services.AddApplication(moduleApplicationAssemblies);
 
 string databaseConnectionString = builder.Configuration.GetConnectionStringOrThrow("Database");
 builder.Services.AddInfrastructure(databaseConnectionString);
-builder.Services.AddFileLinks(builder.Configuration);
 
 builder.Services.AddAuthModule(builder.Configuration);
 builder.Services.AddStorageModule(builder.Configuration);
