@@ -9,7 +9,9 @@ internal sealed record UpdateMyStudentRequest
     public DateOnly? DateOfBirth { get; init; }
     public string? School { get; init; }
     public int? Grade { get; init; }
-    public Region? Region { get; init; }
+    // ISO 3166-1 alpha-2 code, and the state, province or region as the student writes it.
+    public string? Country { get; init; }
+    public string? Region { get; init; }
     public IReadOnlyList<ExamGoalRequest>? ExamGoals { get; init; }
 }
 

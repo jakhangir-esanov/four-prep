@@ -14,6 +14,8 @@ internal sealed class StudentConfiguration : IEntityTypeConfiguration<Student>
         builder.Property(x => x.FirstName).HasMaxLength(100);
         builder.Property(x => x.LastName).HasMaxLength(100);
         builder.Property(x => x.School).HasMaxLength(200);
+        builder.Property(x => x.Country).HasMaxLength(2);
+        builder.Property(x => x.Region).HasMaxLength(100);
         builder.Property(x => x.LinkCode).HasMaxLength(16).IsRequired();
         builder.Property(x => x.CreatedOnUtc).IsRequired();
         builder.Property(x => x.UpdatedOnUtc).IsRequired();
@@ -31,5 +33,6 @@ internal sealed class StudentConfiguration : IEntityTypeConfiguration<Student>
         builder.HasIndex(x => x.UserId).IsUnique();
         builder.HasIndex(x => x.LinkCode).IsUnique();
         builder.HasIndex(x => x.MentorUserId);
+        builder.HasIndex(x => x.Country);
     }
 }

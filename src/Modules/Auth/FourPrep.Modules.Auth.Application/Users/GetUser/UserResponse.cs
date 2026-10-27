@@ -7,4 +7,7 @@ public sealed record UserResponse(
     bool EmailVerified,
     string? PhoneNumber,
     bool IsActive,
-    DateTimeOffset? RegisteredOnUtc);
+    DateTimeOffset? RegisteredOnUtc,
+    string? Country = null,
+    string? TimeZone = null,
+    string? Locale = null);

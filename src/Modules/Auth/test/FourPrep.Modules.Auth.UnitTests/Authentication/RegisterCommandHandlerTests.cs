@@ -10,7 +10,7 @@ using FourPrep.Modules.Auth.Application.Authentication.Register;
 public class RegisterCommandHandlerTests
 {
     private static RegisterCommand Command(string role) =>
-        new("Aziz.Karimov", "aziz@example.com", "+998901234567", "Passw0rd!23", role);
+        new("Aziz.Karimov", "aziz@example.com", "+1 (415) 555-0100", "Passw0rd!23", "us", "America/Los_Angeles", "EN", role);
 
     [Fact]
     public async Task Handle_CreatesAStudentWithAProfileAndSignsThemIn()
@@ -24,10 +24,26 @@ public class RegisterCommandHandlerTests
         Assert.True(result.IsSuccess);
         var user = Assert.Single(identity.Users.Values);
         Assert.Equal((user.Id, Roles.Student), Assert.Single(identity.AssignedRoles));
-        Assert.Equal((user.Id, "aziz.karimov"), Assert.Single(students.Created));
+        Assert.Equal((user.Id, "aziz.karimov", "US"), Assert.Single(students.Created));
         Assert.Equal("access-token", result.Data.AccessToken);
         Assert.Single(sessions.Inserted);
         Assert.Equal(1, unitOfWork.SaveCount);
+    }
+
+    [Fact]
+    public async Task Handle_StoresTheInternationalProfileInNormalFormAndSendsAVerificationEmail()
+    {
+        var identity = new FakeIdentityProviderClient();
+        var (handler, _, _) = Build(identity, new FakeStudentService());
+
+        await handler.Handle(Command(Roles.Student), default);
+
+        var user = Assert.Single(identity.Users.Values);
+        Assert.Equal("+14155550100", user.PhoneNumber);
+        Assert.Equal("US", user.Country);
+        Assert.Equal("America/Los_Angeles", user.TimeZone);
+        Assert.Equal("en", user.Locale);
+        Assert.Equal(user.Id, Assert.Single(identity.VerificationEmails));
     }
 
     [Fact]

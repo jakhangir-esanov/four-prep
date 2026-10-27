@@ -10,7 +10,10 @@ public sealed record CreateUserCommand(
     string Email,
     string? PhoneNumber,
     string Password,
-    string Role) : ICommand<Guid>;
+    string Role,
+    string? Country = null,
+    string? TimeZone = null,
+    string? Locale = null) : ICommand<Guid>;
 
 internal sealed class CreateUserCommandHandler(
     IIdentityProviderClient identityProviderClient,
@@ -18,10 +21,16 @@ internal sealed class CreateUserCommandHandler(
 {
     public async Task<Result<Guid>> Handle(CreateUserCommand request, CancellationToken cancellationToken)
     {
+        var attributes = UserAttributes.Normalized(
+            request.PhoneNumber,
+            request.Country,
+            request.TimeZone,
+            request.Locale);
+
         var createResult = await identityProviderClient.CreateUserAsync(
             request.Username,
             request.Email,
-            request.PhoneNumber,
+            attributes,
             emailVerified: false,
             isActive: true,
             password: request.Password,
@@ -37,6 +46,7 @@ internal sealed class CreateUserCommandHandler(
             studentService,
             createResult.Data,
             request.Username,
+            attributes.Country,
             request.Role,
             cancellationToken);
 

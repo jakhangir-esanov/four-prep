@@ -26,6 +26,9 @@ internal sealed class RegisterParent : IEndpoint
                 request.Email,
                 request.PhoneNumber,
                 request.Password,
+                request.Country,
+                request.TimeZone,
+                request.Locale,
                 Roles.Parent);
 
             var result = await sender.Send(command);

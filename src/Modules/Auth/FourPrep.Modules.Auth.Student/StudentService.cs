@@ -10,8 +10,9 @@ public sealed class StudentService(ISender sender) : IStudentService
     public async Task<Result<Guid>> CreateStudentAsync(
         Guid userId,
         string userName,
+        string? country,
         CancellationToken cancellationToken = default)
     {
-        return await sender.Send(new CreateStudentCommand(userId, userName), cancellationToken);
+        return await sender.Send(new CreateStudentCommand(userId, userName, country), cancellationToken);
     }
 }

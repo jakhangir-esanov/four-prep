@@ -1,6 +1,7 @@
 namespace FourPrep.Modules.Auth.Application.Users.UpdateUserContact;
 
 using FourPrep.Common.Domain;
+using FourPrep.Common.Domain.Localization;
 using FourPrep.Common.Application.Messaging;
 using FourPrep.Modules.Auth.Application.Abstractions.Identity;
 
@@ -23,7 +24,7 @@ internal sealed class UpdateUserContactCommandHandler(
             request.UserId.ToString(),
             user.Data.UserName,
             request.Email,
-            request.PhoneNumber,
+            UserAttributes.Of(user.Data) with { PhoneNumber = PhoneNumbers.NormalizeOrNull(request.PhoneNumber) },
             emailVerified: emailUnchanged && user.Data.EmailVerified,
             isActive: user.Data.IsActive,
             cancellationToken);

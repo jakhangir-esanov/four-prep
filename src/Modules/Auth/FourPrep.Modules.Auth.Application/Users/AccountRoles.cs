@@ -14,6 +14,7 @@ internal static class AccountRoles
         IStudentService studentService,
         string keycloakUserId,
         string username,
+        string? country,
         string role,
         CancellationToken cancellationToken)
     {
@@ -35,6 +36,7 @@ internal static class AccountRoles
         var studentCreated = await studentService.CreateStudentAsync(
             userId,
             username.ToLowerInvariant(),
+            country,
             cancellationToken);
 
         if (studentCreated.IsFailure)

@@ -27,6 +27,8 @@ internal sealed partial class KeycloakAdminClient(
     private const string AdminUserCountUrlTemplate = "admin/realms/{0}/users/count";
     private const string AdminUserLogoutUrlTemplate = "admin/realms/{0}/users/{1}/logout";
     private const string AdminUserPasswordUrlTemplate = "admin/realms/{0}/users/{1}/reset-password";
+    private const string AdminUserVerifyEmailUrlTemplate = "admin/realms/{0}/users/{1}/send-verify-email";
+    private const string AdminUserActionsEmailUrlTemplate = "admin/realms/{0}/users/{1}/execute-actions-email";
     private const string AdminUserRealmRolesUrlTemplate = "admin/realms/{0}/users/{1}/role-mappings/realm";
     private const string AdminRoleMembersUrlTemplate = "admin/realms/{0}/roles/{1}/users";
     private const string AdminRealmRoleUrlTemplate = "admin/realms/{0}/roles/{1}";
@@ -56,6 +58,10 @@ internal sealed partial class KeycloakAdminClient(
 
     private const string PasswordCredentialType = "password";
     private const string PhoneNumberAttribute = "phone_number";
+    private const string CountryAttribute = "country";
+    private const string TimeZoneAttribute = "zoneinfo";
+    private const string LocaleAttribute = "locale";
+    private const string UpdatePasswordAction = "UPDATE_PASSWORD";
     private const string ConflictKeyword = "exists";
     private const string ErrorMessageField = "errorMessage";
     private const string ErrorFieldName = "field";
@@ -75,6 +81,14 @@ internal sealed partial class KeycloakAdminClient(
     private const string EnabledParameter = "enabled";
     private const string FirstParameter = "first";
     private const string MaxParameter = "max";
+    private const string EmailParameter = "email";
+    private const string ExactParameter = "exact";
+    private const string ClientIdParameter = "client_id";
+    private const string RedirectUriParameter = "redirect_uri";
+    private const string LifespanParameter = "lifespan";
+
+    private const int VerificationLinkLifespanSeconds = 24 * 60 * 60;
+    private const int PasswordResetLinkLifespanSeconds = 60 * 60;
 
     private const int ListingPageSize = 500;
 
@@ -86,7 +100,7 @@ internal sealed partial class KeycloakAdminClient(
     public async Task<Result<string>> CreateUserAsync(
         string username,
         string email,
-        string? phoneNumber,
+        UserAttributes attributes,
         bool emailVerified,
         bool isActive,
         string? password = null,
@@ -100,7 +114,7 @@ internal sealed partial class KeycloakAdminClient(
             enabled = isActive,
             emailVerified,
             credentials = BuildCredentials(password),
-            attributes = BuildAttributes(phoneNumber),
+            attributes = BuildAttributes(attributes),
             requiredActions = Array.Empty<string>()
         });
 
@@ -120,7 +134,7 @@ internal sealed partial class KeycloakAdminClient(
         string keycloakUserId,
         string username,
         string email,
-        string? phoneNumber,
+        UserAttributes attributes,
         bool emailVerified,
         bool isActive,
         CancellationToken cancellationToken = default)
@@ -132,7 +146,7 @@ internal sealed partial class KeycloakAdminClient(
             email,
             enabled = isActive,
             emailVerified,
-            attributes = BuildAttributes(phoneNumber)
+            attributes = BuildAttributes(attributes)
         });
 
         using var response = await httpClient.SendAsync(request, cancellationToken);
@@ -214,6 +228,25 @@ internal sealed partial class KeycloakAdminClient(
         return result.IsSuccess
             ? ToUserResponse(result.Data)
             : Result.Failure<UserResponse>(ToUserError(result.Error));
+    }
+
+    public async Task<Result<UserResponse>> FindUserByEmailAsync(
+        string email,
+        CancellationToken cancellationToken = default)
+    {
+        string url = AppendQuery(
+            BuildUsersUrl(),
+            [$"{EmailParameter}={Uri.EscapeDataString(email)}", $"{ExactParameter}=true"]);
+
+        var users = await GetAdminJsonAsync<JArray>(url, cancellationToken);
+        if (users.IsFailure)
+        {
+            return Result.Failure<UserResponse>(users.Error);
+        }
+
+        return users.Data.OfType<JObject>().FirstOrDefault() is { } user
+            ? ToUserResponse(user)
+            : Result.Failure<UserResponse>(UserErrors.NotFound);
     }
 
     public async Task<Result<PagedList<UserResponse>>> SearchUsersAsync(
@@ -336,6 +369,39 @@ internal sealed partial class KeycloakAdminClient(
     {
         using var request = await BuildAdminRequestAsync(HttpMethod.Put, BuildUserPasswordUrl(userId), cancellationToken);
         request.Content = CreateJsonContent(BuildPasswordCredential(password));
+
+        using var response = await httpClient.SendAsync(request, cancellationToken);
+        return response.IsSuccessStatusCode
+            ? Result.Success()
+            : Result.Failure(ToUserError(await MapErrorAsync(response, cancellationToken)));
+    }
+
+    public async Task<Result> SendVerificationEmailAsync(
+        Guid userId,
+        CancellationToken cancellationToken = default)
+    {
+        string url = AppendQuery(
+            BuildUserVerifyEmailUrl(userId),
+            [.. BuildEmailLinkParameters(), $"{LifespanParameter}={VerificationLinkLifespanSeconds}"]);
+
+        using var request = await BuildAdminRequestAsync(HttpMethod.Put, url, cancellationToken);
+
+        using var response = await httpClient.SendAsync(request, cancellationToken);
+        return response.IsSuccessStatusCode
+            ? Result.Success()
+            : Result.Failure(ToUserError(await MapErrorAsync(response, cancellationToken)));
+    }
+
+    public async Task<Result> SendPasswordResetEmailAsync(
+        Guid userId,
+        CancellationToken cancellationToken = default)
+    {
+        string url = AppendQuery(
+            BuildUserActionsEmailUrl(userId),
+            [.. BuildEmailLinkParameters(), $"{LifespanParameter}={PasswordResetLinkLifespanSeconds}"]);
+
+        using var request = await BuildAdminRequestAsync(HttpMethod.Put, url, cancellationToken);
+        request.Content = CreateJsonContent(new[] { UpdatePasswordAction });
 
         using var response = await httpClient.SendAsync(request, cancellationToken);
         return response.IsSuccessStatusCode
@@ -492,6 +558,27 @@ internal sealed partial class KeycloakAdminClient(
     private string BuildUserPasswordUrl(Guid userId) =>
         string.Format(AdminUserPasswordUrlTemplate, _options.Realm, userId);
 
+    private string BuildUserVerifyEmailUrl(Guid userId) =>
+        string.Format(AdminUserVerifyEmailUrlTemplate, _options.Realm, userId);
+
+    private string BuildUserActionsEmailUrl(Guid userId) =>
+        string.Format(AdminUserActionsEmailUrlTemplate, _options.Realm, userId);
+
+    // Where the email's "back to application" link leads; it must be one of the client's redirect URIs.
+    private List<string> BuildEmailLinkParameters()
+    {
+        if (string.IsNullOrWhiteSpace(_options.EmailRedirectUrl))
+        {
+            return [];
+        }
+
+        return
+        [
+            $"{ClientIdParameter}={Uri.EscapeDataString(_options.ClientId)}",
+            $"{RedirectUriParameter}={Uri.EscapeDataString(_options.EmailRedirectUrl)}"
+        ];
+    }
+
     private string BuildUserRealmRolesUrl(Guid userId) =>
         string.Format(AdminUserRealmRolesUrlTemplate, _options.Realm, userId);
 
@@ -510,17 +597,19 @@ internal sealed partial class KeycloakAdminClient(
     private static StringContent CreateJsonContent(object payload) =>
         new(JsonConvert.SerializeObject(payload), Encoding.UTF8, JsonMediaType);
 
-    private static object BuildAttributes(string? phoneNumber)
+    private static Dictionary<string, string[]> BuildAttributes(UserAttributes attributes)
     {
-        if (string.IsNullOrWhiteSpace(phoneNumber))
+        var values = new Dictionary<string, string?>
         {
-            return new { };
-        }
-
-        return new Dictionary<string, string[]>
-        {
-            [PhoneNumberAttribute] = [phoneNumber]
+            [PhoneNumberAttribute] = attributes.PhoneNumber,
+            [CountryAttribute] = attributes.Country,
+            [TimeZoneAttribute] = attributes.TimeZone,
+            [LocaleAttribute] = attributes.Locale
         };
+
+        return values
+            .Where(pair => !string.IsNullOrWhiteSpace(pair.Value))
+            .ToDictionary(pair => pair.Key, pair => new[] { pair.Value! });
     }
 
     private static object[]? BuildCredentials(string? password)
@@ -571,9 +660,15 @@ internal sealed partial class KeycloakAdminClient(
             json.Value<string>(UsernameField) ?? string.Empty,
             json.Value<string>(EmailField),
             json.Value<bool?>(EmailVerifiedField) ?? false,
-            json[AttributesField]?[PhoneNumberAttribute]?.First?.Value<string>(),
+            ReadAttribute(json, PhoneNumberAttribute),
             json.Value<bool?>(EnabledField) ?? false,
-            ReadCreatedOnUtc(json));
+            ReadCreatedOnUtc(json),
+            ReadAttribute(json, CountryAttribute),
+            ReadAttribute(json, TimeZoneAttribute),
+            ReadAttribute(json, LocaleAttribute));
+
+    private static string? ReadAttribute(JObject json, string name) =>
+        json[AttributesField]?[name]?.First?.Value<string>();
 
     private static DateTimeOffset? ReadCreatedOnUtc(JObject json)
     {

@@ -27,7 +27,7 @@ internal sealed class GetStudents : IEndpoint
                     request.SortOrder ?? -1),
                 new StudentFilter(
                     request.Search,
-                    request.Region,
+                    request.Country,
                     request.Grade,
                     request.Exam,
                     request.MentorUserId,

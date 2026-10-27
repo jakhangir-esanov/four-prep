@@ -58,7 +58,7 @@ internal sealed class FakeStudentRepository : IStudentRepository
 
     public Student Add(Guid userId, string linkCode = "ABCD2345")
     {
-        var student = Student.Create(userId, "student", linkCode, new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc));
+        var student = Student.Create(userId, "student", null, linkCode, new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc));
         Students.Add(student);
         return student;
     }

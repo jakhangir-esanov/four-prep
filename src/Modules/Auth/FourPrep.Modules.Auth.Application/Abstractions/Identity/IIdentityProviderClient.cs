@@ -9,7 +9,7 @@ public interface IIdentityProviderClient
     Task<Result<string>> CreateUserAsync(
         string username,
         string email,
-        string? phoneNumber,
+        UserAttributes attributes,
         bool emailVerified,
         bool isActive,
         string? password = null,
@@ -19,7 +19,7 @@ public interface IIdentityProviderClient
         string keycloakUserId,
         string username,
         string email,
-        string? phoneNumber,
+        UserAttributes attributes,
         bool emailVerified,
         bool isActive,
         CancellationToken cancellationToken = default);
@@ -43,6 +43,10 @@ public interface IIdentityProviderClient
 
     Task<Result<UserResponse>> GetUserAsync(
         Guid userId,
+        CancellationToken cancellationToken = default);
+
+    Task<Result<UserResponse>> FindUserByEmailAsync(
+        string email,
         CancellationToken cancellationToken = default);
 
     Task<Result<PagedList<UserResponse>>> SearchUsersAsync(
@@ -76,5 +80,14 @@ public interface IIdentityProviderClient
     Task<Result> SetUserPasswordAsync(
         Guid userId,
         string password,
+        CancellationToken cancellationToken = default);
+
+    // Keycloak sends these emails in the user's locale, with a link that expires.
+    Task<Result> SendVerificationEmailAsync(
+        Guid userId,
+        CancellationToken cancellationToken = default);
+
+    Task<Result> SendPasswordResetEmailAsync(
+        Guid userId,
         CancellationToken cancellationToken = default);
 }

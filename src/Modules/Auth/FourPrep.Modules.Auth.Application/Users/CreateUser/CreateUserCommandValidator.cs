@@ -17,11 +17,14 @@ internal sealed class CreateUserCommandValidator : AbstractValidator<CreateUserC
             .Matches(UsernamePattern)
             .WithError(UserErrors.InvalidUsername);
         RuleFor(x => x.Email).NotEmpty().EmailAddress().MaximumLength(320);
-        RuleFor(x => x.PhoneNumber).MaximumLength(32);
+        RuleFor(x => x.PhoneNumber).PhoneNumber();
         RuleFor(x => x.Password).NotEmpty().MinimumLength(8).MaximumLength(128);
         RuleFor(x => x.Role)
             .NotEmpty()
             .Must(role => Roles.All.Contains(role))
             .WithError(UserErrors.InvalidRole);
+        RuleFor(x => x.Country).CountryCode();
+        RuleFor(x => x.TimeZone).TimeZoneId();
+        RuleFor(x => x.Locale).Locale();
     }
 }

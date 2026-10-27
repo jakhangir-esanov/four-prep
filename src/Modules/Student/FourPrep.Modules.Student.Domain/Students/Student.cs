@@ -1,6 +1,5 @@
 namespace FourPrep.Modules.Student.Domain.Students;
 
-using FourPrep.Common.Domain.Enums;
 using FourPrep.Modules.Student.Domain.ExamGoals;
 
 public sealed class Student
@@ -15,20 +14,22 @@ public sealed class Student
     public DateOnly? DateOfBirth { get; set; }
     public string? School { get; set; }
     public int? Grade { get; set; }
-    public Region? Region { get; set; }
+    public string? Country { get; set; }
+    public string? Region { get; set; }
     public Guid? MentorUserId { get; set; }
     public string LinkCode { get; set; } = string.Empty;
     public IReadOnlyCollection<ExamGoal> ExamGoals => _examGoals;
     public DateTimeOffset CreatedOnUtc { get; set; }
     public DateTimeOffset UpdatedOnUtc { get; set; }
 
-    public static Student Create(Guid userId, string userName, string linkCode, DateTime utcNow)
+    public static Student Create(Guid userId, string userName, string? country, string linkCode, DateTime utcNow)
     {
         return new Student
         {
             Id = Guid.NewGuid(),
             UserId = userId,
             UserName = userName,
+            Country = country,
             LinkCode = linkCode,
             CreatedOnUtc = utcNow,
             UpdatedOnUtc = utcNow
@@ -41,7 +42,8 @@ public sealed class Student
         DateOnly? dateOfBirth,
         string? school,
         int? grade,
-        Region? region,
+        string? country,
+        string? region,
         IEnumerable<ExamGoal> examGoals,
         DateTime utcNow)
     {
@@ -50,6 +52,7 @@ public sealed class Student
         DateOfBirth = dateOfBirth;
         School = school;
         Grade = grade;
+        Country = country;
         Region = region;
         _examGoals.Clear();
         _examGoals.AddRange(examGoals);

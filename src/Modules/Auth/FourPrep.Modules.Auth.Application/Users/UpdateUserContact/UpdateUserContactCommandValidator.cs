@@ -1,6 +1,7 @@
 namespace FourPrep.Modules.Auth.Application.Users.UpdateUserContact;
 
 using FluentValidation;
+using FourPrep.Common.Application.Extensions;
 
 internal sealed class UpdateUserContactCommandValidator : AbstractValidator<UpdateUserContactCommand>
 {
@@ -8,6 +9,6 @@ internal sealed class UpdateUserContactCommandValidator : AbstractValidator<Upda
     {
         RuleFor(x => x.UserId).NotEmpty();
         RuleFor(x => x.Email).NotEmpty().EmailAddress().MaximumLength(320);
-        RuleFor(x => x.PhoneNumber).MaximumLength(32);
+        RuleFor(x => x.PhoneNumber).PhoneNumber();
     }
 }

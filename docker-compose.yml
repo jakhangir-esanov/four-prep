@@ -16,3 +16,14 @@ services:
       - ./keycloak/realms:/opt/keycloak/data/import:ro
     extra_hosts:
       - 'host.docker.internal:host-gateway'
+    depends_on:
+      - mailpit
+
+  # Local SMTP server: Keycloak sends verification and password reset emails here.
+  # Open http://localhost:8025 to read them.
+  mailpit:
+    image: axllent/mailpit:v1.27
+    container_name: fourprep-mailpit
+    ports:
+      - '1025:1025'
+      - '8025:8025'

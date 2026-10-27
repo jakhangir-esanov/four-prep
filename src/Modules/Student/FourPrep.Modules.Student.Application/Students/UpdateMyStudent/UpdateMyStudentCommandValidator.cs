@@ -11,6 +11,7 @@ internal sealed class UpdateMyStudentCommandValidator : AbstractValidator<Update
     private const int MinAge = 5;
     private const int MaxAge = 100;
     private const int MaxExamGoals = 4;
+    private const int MaxGrade = 12;
 
     public UpdateMyStudentCommandValidator(ITimeZoneContext timeZoneContext)
     {
@@ -19,10 +20,11 @@ internal sealed class UpdateMyStudentCommandValidator : AbstractValidator<Update
         RuleFor(x => x.School).MaximumLength(200);
 
         RuleFor(x => x.Grade)
-            .InclusiveBetween(1, 11)
+            .InclusiveBetween(1, MaxGrade)
             .WithError(StudentErrors.InvalidGrade);
 
-        RuleFor(x => x.Region).IsInEnum();
+        RuleFor(x => x.Country).CountryCode();
+        RuleFor(x => x.Region).MaximumLength(100);
 
         RuleFor(x => x.DateOfBirth)
             .Must(dateOfBirth => IsPlausibleBirthDate(dateOfBirth!.Value, timeZoneContext.Today()))

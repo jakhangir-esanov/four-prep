@@ -25,7 +25,10 @@ internal sealed class CreateUser : IEndpoint
                 request.Email,
                 request.PhoneNumber,
                 request.Password,
-                request.Role);
+                request.Role,
+                request.Country,
+                request.TimeZone,
+                request.Locale);
 
             var result = await sender.Send(command);
 

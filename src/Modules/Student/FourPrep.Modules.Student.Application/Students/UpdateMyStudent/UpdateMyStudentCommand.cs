@@ -2,6 +2,7 @@ namespace FourPrep.Modules.Student.Application.Students.UpdateMyStudent;
 
 using FourPrep.Common.Domain;
 using FourPrep.Common.Domain.Enums;
+using FourPrep.Common.Domain.Localization;
 using FourPrep.Common.Application.Clock;
 using FourPrep.Common.Application.Messaging;
 using FourPrep.Modules.Student.Domain.Students;
@@ -17,7 +18,8 @@ public sealed record UpdateMyStudentCommand(
     DateOnly? DateOfBirth,
     string? School,
     int? Grade,
-    Region? Region,
+    string? Country,
+    string? Region,
     IReadOnlyList<ExamGoalInput> ExamGoals) : ICommand;
 
 internal sealed class UpdateMyStudentCommandHandler(
@@ -40,7 +42,8 @@ internal sealed class UpdateMyStudentCommandHandler(
             request.DateOfBirth,
             Trimmed(request.School),
             request.Grade,
-            request.Region,
+            Countries.NormalizeOrNull(request.Country),
+            Trimmed(request.Region),
             request.ExamGoals.Select(goal => ExamGoal.Create(goal.Exam, goal.TargetScore)),
             dateTimeProvider.UtcNow);
 

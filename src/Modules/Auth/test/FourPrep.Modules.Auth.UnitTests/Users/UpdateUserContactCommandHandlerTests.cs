@@ -48,6 +48,21 @@ public class UpdateUserContactCommandHandlerTests
     }
 
     [Fact]
+    public async Task Handle_KeepsTheCountryTimeZoneAndLanguage()
+    {
+        var identity = new FakeIdentityProviderClient();
+        var user = identity.Add("aziz", isActive: true);
+        identity.Users[user.Id] = user with { Country = "TR", TimeZone = "Europe/Istanbul", Locale = "ru" };
+        var handler = new UpdateUserContactCommandHandler(identity);
+
+        await handler.Handle(new UpdateUserContactCommand(user.Id, "new@example.com", "+90 212 555 0100"), default);
+
+        var updated = identity.Users[user.Id];
+        Assert.Equal(("+902125550100", "TR", "Europe/Istanbul", "ru"),
+            (updated.PhoneNumber, updated.Country, updated.TimeZone, updated.Locale));
+    }
+
+    [Fact]
     public async Task Handle_ReportsAnUnknownAccount()
     {
         var handler = new UpdateUserContactCommandHandler(new FakeIdentityProviderClient());

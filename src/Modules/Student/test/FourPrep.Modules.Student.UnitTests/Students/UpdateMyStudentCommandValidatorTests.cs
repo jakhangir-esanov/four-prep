@@ -1,6 +1,7 @@
 namespace FourPrep.Modules.Student.UnitTests.Students;
 
 using FourPrep.Common.Domain.Enums;
+using FourPrep.Common.Domain.Localization;
 using FourPrep.Modules.Student.Domain.Students;
 using FourPrep.Modules.Student.Domain.ExamGoals;
 using FourPrep.Modules.Student.Application.Students.UpdateMyStudent;
@@ -23,7 +24,7 @@ public class UpdateMyStudentCommandValidatorTests
     [Fact]
     public void Validate_WhenEverythingIsLeftEmpty_Passes()
     {
-        var command = new UpdateMyStudentCommand(null, null, null, null, null, null, []);
+        var command = new UpdateMyStudentCommand(null, null, null, null, null, null, null, []);
 
         Assert.True(Validator.Validate(command).IsValid);
     }
@@ -72,7 +73,7 @@ public class UpdateMyStudentCommandValidatorTests
 
     [Theory]
     [InlineData(0)]
-    [InlineData(12)]
+    [InlineData(13)]
     public void Validate_WhenTheGradeIsOutOfRange_FailsWithInvalidGrade(int grade)
     {
         var error = Assert.Single(Validator.Validate(Command() with { Grade = grade }).Errors);
@@ -91,12 +92,22 @@ public class UpdateMyStudentCommandValidatorTests
         Assert.Equal(StudentErrors.InvalidDateOfBirth.Code, error.ErrorCode);
     }
 
-    [Fact]
-    public void Validate_WhenTheRegionIsUnknown_Fails()
+    [Theory]
+    [InlineData("XX")]
+    [InlineData("USA")]
+    [InlineData("Uzbekistan")]
+    public void Validate_WhenTheCountryIsNotAnIsoCode_FailsWithInvalidCountry(string country)
     {
-        Assert.False(Validator.Validate(Command() with { Region = (Region)99 }).IsValid);
+        var error = Assert.Single(Validator.Validate(Command() with { Country = country }).Errors);
+        Assert.Equal(LocalizationErrors.InvalidCountry.Code, error.ErrorCode);
+    }
+
+    [Fact]
+    public void Validate_WhenTheGradeIsTwelve_Passes()
+    {
+        Assert.True(Validator.Validate(Command() with { Grade = 12 }).IsValid);
     }
 
     private static UpdateMyStudentCommand Command() =>
-        new("Aziz", "Karimov", new DateOnly(2009, 5, 14), "Presidential School", 10, Region.TashkentCity, []);
+        new("Aziz", "Karimov", new DateOnly(2009, 5, 14), "Presidential School", 10, "UZ", "Samarkand", []);
 }

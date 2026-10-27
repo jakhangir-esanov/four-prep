@@ -1,13 +1,14 @@
 namespace FourPrep.Modules.Student.Application.Students.CreateStudent;
 
 using FourPrep.Common.Domain;
+using FourPrep.Common.Domain.Localization;
 using FourPrep.Common.Application.Clock;
 using FourPrep.Common.Application.Messaging;
 using FourPrep.Modules.Student.Domain.Students;
 using FourPrep.Modules.Student.Application.Abstractions.Data;
 using FourPrep.Modules.Student.Application.Abstractions.LinkCodes;
 
-public sealed record CreateStudentCommand(Guid UserId, string UserName) : ICommand<Guid>;
+public sealed record CreateStudentCommand(Guid UserId, string UserName, string? Country = null) : ICommand<Guid>;
 
 internal sealed class CreateStudentCommandHandler(
     IUnitOfWork unitOfWork,
@@ -29,7 +30,12 @@ internal sealed class CreateStudentCommandHandler(
             return Result.Failure<Guid>(linkCode.Error);
         }
 
-        var student = Student.Create(request.UserId, request.UserName, linkCode.Data, dateTimeProvider.UtcNow);
+        var student = Student.Create(
+            request.UserId,
+            request.UserName,
+            Countries.NormalizeOrNull(request.Country),
+            linkCode.Data,
+            dateTimeProvider.UtcNow);
 
         repository.Insert(student);
         await unitOfWork.SaveChangesAsync(cancellationToken);

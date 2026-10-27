@@ -12,7 +12,8 @@ public sealed record StudentResponse
     public DateOnly? DateOfBirth { get; init; }
     public string? School { get; init; }
     public int? Grade { get; init; }
-    public Region? Region { get; init; }
+    public string? Country { get; init; }
+    public string? Region { get; init; }
     public Guid? MentorUserId { get; init; }
     public string LinkCode { get; init; } = string.Empty;
     public IReadOnlyList<ExamGoalResponse> ExamGoals { get; init; } = [];

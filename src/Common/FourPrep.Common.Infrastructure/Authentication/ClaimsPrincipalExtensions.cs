@@ -27,4 +27,13 @@ public static class ClaimsPrincipalExtensions
     public static string GetUserName(this ClaimsPrincipal? principal) =>
         principal?.FindFirst(CustomClaims.PreferredUsername)?.Value ??
         throw new ApplicationException("User name is unavailable");
+
+    public static string? GetCountryOrNull(this ClaimsPrincipal? principal) =>
+        principal?.FindFirst(CustomClaims.Country)?.Value;
+
+    public static string? GetTimeZoneOrNull(this ClaimsPrincipal? principal) =>
+        principal?.FindFirst(CustomClaims.ZoneInfo)?.Value;
+
+    public static string? GetLocaleOrNull(this ClaimsPrincipal? principal) =>
+        principal?.FindFirst(CustomClaims.Locale)?.Value;
 }

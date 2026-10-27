@@ -26,6 +26,7 @@ internal sealed class UpdateMyStudent : IEndpoint
                 request.DateOfBirth,
                 request.School,
                 request.Grade,
+                request.Country,
                 request.Region,
                 request.ExamGoals?.Select(goal => new ExamGoalInput(goal.Exam, goal.TargetScore)).ToList() ?? []);
 

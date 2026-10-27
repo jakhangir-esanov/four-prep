@@ -29,6 +29,7 @@ internal sealed class GetMyChildrenQueryHandler(
                 s.last_name AS {nameof(StudentSummaryResponse.LastName)},
                 s.school AS {nameof(StudentSummaryResponse.School)},
                 s.grade AS {nameof(StudentSummaryResponse.Grade)},
+                s.country AS {nameof(StudentSummaryResponse.Country)},
                 s.region AS {nameof(StudentSummaryResponse.Region)},
                 s.mentor_user_id AS {nameof(StudentSummaryResponse.MentorUserId)},
                 s.created_on_utc AS {nameof(StudentSummaryResponse.CreatedOnUtc)}

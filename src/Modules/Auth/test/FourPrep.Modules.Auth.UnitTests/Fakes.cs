@@ -58,18 +58,19 @@ internal sealed class FakeUserSessionRepository : IUserSessionRepository
 
 internal sealed class FakeStudentService : IStudentService
 {
-    public List<(Guid UserId, string UserName)> Created { get; } = [];
+    public List<(Guid UserId, string UserName, string? Country)> Created { get; } = [];
 
     public Error? CreateFailure { get; init; }
 
-    public Task<Result<Guid>> CreateStudentAsync(Guid userId, string userName, CancellationToken cancellationToken = default)
+    public Task<Result<Guid>> CreateStudentAsync(
+        Guid userId, string userName, string? country, CancellationToken cancellationToken = default)
     {
         if (CreateFailure is not null)
         {
             return Task.FromResult(Result.Failure<Guid>(CreateFailure));
         }
 
-        Created.Add((userId, userName));
+        Created.Add((userId, userName, country));
         return Task.FromResult(Result.Success(Guid.NewGuid()));
     }
 }
@@ -83,6 +84,10 @@ internal sealed class FakeIdentityProviderClient : IIdentityProviderClient
     public List<(Guid UserId, string Role)> AssignedRoles { get; } = [];
 
     public Dictionary<Guid, string> Passwords { get; } = [];
+
+    public List<Guid> VerificationEmails { get; } = [];
+
+    public List<Guid> PasswordResetEmails { get; } = [];
 
     public Error? CreateFailure { get; init; }
 
@@ -116,7 +121,7 @@ internal sealed class FakeIdentityProviderClient : IIdentityProviderClient
     }
 
     public Task<Result<string>> CreateUserAsync(
-        string username, string email, string? phoneNumber, bool emailVerified, bool isActive,
+        string username, string email, UserAttributes attributes, bool emailVerified, bool isActive,
         string? password = null, CancellationToken cancellationToken = default)
     {
         if (CreateFailure is not null)
@@ -124,13 +129,15 @@ internal sealed class FakeIdentityProviderClient : IIdentityProviderClient
             return Task.FromResult(Result.Failure<string>(CreateFailure));
         }
 
-        var user = new UserResponse(Guid.NewGuid(), username, email, emailVerified, phoneNumber, isActive, null);
+        var user = new UserResponse(
+            Guid.NewGuid(), username, email, emailVerified, attributes.PhoneNumber, isActive, null,
+            attributes.Country, attributes.TimeZone, attributes.Locale);
         Users[user.Id] = user;
         return Task.FromResult(Result.Success(user.Id.ToString()));
     }
 
     public Task<Result> UpdateUserAsync(
-        string keycloakUserId, string username, string email, string? phoneNumber, bool emailVerified,
+        string keycloakUserId, string username, string email, UserAttributes attributes, bool emailVerified,
         bool isActive, CancellationToken cancellationToken = default)
     {
         var id = Guid.Parse(keycloakUserId);
@@ -138,7 +145,10 @@ internal sealed class FakeIdentityProviderClient : IIdentityProviderClient
         {
             UserName = username,
             Email = email,
-            PhoneNumber = phoneNumber,
+            PhoneNumber = attributes.PhoneNumber,
+            Country = attributes.Country,
+            TimeZone = attributes.TimeZone,
+            Locale = attributes.Locale,
             EmailVerified = emailVerified,
             IsActive = isActive
         };
@@ -173,6 +183,25 @@ internal sealed class FakeIdentityProviderClient : IIdentityProviderClient
 
     public Task<Result> LogoutAsync(string refreshToken, CancellationToken cancellationToken = default) =>
         throw new NotSupportedException();
+
+    public Task<Result<UserResponse>> FindUserByEmailAsync(string email, CancellationToken cancellationToken = default)
+    {
+        var user = Users.Values.FirstOrDefault(user => string.Equals(user.Email, email, StringComparison.OrdinalIgnoreCase));
+
+        return Task.FromResult(user is null ? Result.Failure<UserResponse>(UserErrors.NotFound) : Result.Success(user));
+    }
+
+    public Task<Result> SendVerificationEmailAsync(Guid userId, CancellationToken cancellationToken = default)
+    {
+        VerificationEmails.Add(userId);
+        return Task.FromResult(Result.Success());
+    }
+
+    public Task<Result> SendPasswordResetEmailAsync(Guid userId, CancellationToken cancellationToken = default)
+    {
+        PasswordResetEmails.Add(userId);
+        return Task.FromResult(Result.Success());
+    }
 
     public Task<Result<PagedList<UserResponse>>> SearchUsersAsync(
         string? search, bool? isEnabled, IPagingRequest paging, CancellationToken cancellationToken = default) =>

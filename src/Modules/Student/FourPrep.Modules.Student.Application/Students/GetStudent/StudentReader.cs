@@ -34,6 +34,7 @@ internal static class StudentReader
                 date_of_birth AS {nameof(StudentResponse.DateOfBirth)},
                 school AS {nameof(StudentResponse.School)},
                 grade AS {nameof(StudentResponse.Grade)},
+                country AS {nameof(StudentResponse.Country)},
                 region AS {nameof(StudentResponse.Region)},
                 mentor_user_id AS {nameof(StudentResponse.MentorUserId)},
                 link_code AS {nameof(StudentResponse.LinkCode)},

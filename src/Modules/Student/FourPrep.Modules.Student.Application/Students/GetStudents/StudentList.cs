@@ -19,9 +19,9 @@ internal static class StudentList
             conditions.Add("(s.first_name ILIKE @Search OR s.last_name ILIKE @Search OR s.user_name ILIKE @Search)");
         }
 
-        if (filter.Region is not null)
+        if (filter.CountryCode is not null)
         {
-            conditions.Add("s.region = @Region");
+            conditions.Add("s.country = @Country");
         }
 
         if (filter.Grade is not null)
@@ -56,6 +56,7 @@ internal static class StudentList
                 s.last_name AS {nameof(StudentSummaryResponse.LastName)},
                 s.school AS {nameof(StudentSummaryResponse.School)},
                 s.grade AS {nameof(StudentSummaryResponse.Grade)},
+                s.country AS {nameof(StudentSummaryResponse.Country)},
                 s.region AS {nameof(StudentSummaryResponse.Region)},
                 s.mentor_user_id AS {nameof(StudentSummaryResponse.MentorUserId)},
                 s.created_on_utc AS {nameof(StudentSummaryResponse.CreatedOnUtc)}
@@ -70,7 +71,7 @@ internal static class StudentList
         var param = new
         {
             Search = filter.SearchPattern,
-            Region = (int?)filter.Region,
+            Country = filter.CountryCode,
             filter.Grade,
             Exam = (int?)filter.Exam,
             filter.MentorUserId,

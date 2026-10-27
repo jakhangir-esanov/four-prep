@@ -63,6 +63,7 @@ builder.Services.AddAgreementModule(builder.Configuration);
 builder.Services.AddAdmissionModule(builder.Configuration);
 
 builder.Services.AddCorsPolicy(builder.Configuration);
+builder.Services.AddRateLimitPolicies();
 
 var app = builder.Build();
 
@@ -81,6 +82,8 @@ app.UseExceptionHandler();
 app.UseAuthentication();
 
 app.UseAuthorization();
+
+app.UseRateLimiter();
 
 app.UseJobsDashboard();
 

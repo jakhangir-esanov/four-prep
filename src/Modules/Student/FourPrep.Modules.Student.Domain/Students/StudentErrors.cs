@@ -36,9 +36,9 @@ public static class StudentErrors
 
     public static readonly Error InvalidGrade = Error.Problem(
         "Student.InvalidGrade",
-        en: "Grade must be between 1 and 11.",
-        uz: "Sinf 1 dan 11 gacha bo'lishi kerak.",
-        ru: "Класс должен быть от 1 до 11.");
+        en: "Grade must be between 1 and 12.",
+        uz: "Sinf 1 dan 12 gacha bo'lishi kerak.",
+        ru: "Класс должен быть от 1 до 12.");
 
     public static readonly Error InvalidDateOfBirth = Error.Problem(
         "Student.InvalidDateOfBirth",

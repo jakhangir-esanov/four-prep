@@ -15,6 +15,9 @@ public sealed record RegisterCommand(
     string Email,
     string? PhoneNumber,
     string Password,
+    string Country,
+    string? TimeZone,
+    string? Locale,
     string Role) : ICommand<AuthTokenResponse>;
 
 internal sealed class RegisterCommandHandler(
@@ -26,10 +29,16 @@ internal sealed class RegisterCommandHandler(
 {
     public async Task<Result<AuthTokenResponse>> Handle(RegisterCommand request, CancellationToken cancellationToken)
     {
+        var attributes = UserAttributes.Normalized(
+            request.PhoneNumber,
+            request.Country,
+            request.TimeZone,
+            request.Locale);
+
         var createResult = await identityProviderClient.CreateUserAsync(
             request.Username,
             request.Email,
-            request.PhoneNumber,
+            attributes,
             emailVerified: false,
             isActive: true,
             password: request.Password,
@@ -45,6 +54,7 @@ internal sealed class RegisterCommandHandler(
             studentService,
             createResult.Data,
             request.Username,
+            attributes.Country,
             request.Role,
             cancellationToken);
 
@@ -52,6 +62,9 @@ internal sealed class RegisterCommandHandler(
         {
             return Result.Failure<AuthTokenResponse>(roleGranted.Error);
         }
+
+        // A lost email must not undo the sign-up; the user can ask for another one from /auth/me.
+        await identityProviderClient.SendVerificationEmailAsync(Guid.Parse(createResult.Data), cancellationToken);
 
         var loginResult = await identityProviderClient.LoginAsync(request.Username, request.Password, cancellationToken);
         if (loginResult.IsFailure)

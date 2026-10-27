@@ -26,6 +26,9 @@ internal sealed class Register : IEndpoint
                 request.Email,
                 request.PhoneNumber,
                 request.Password,
+                request.Country,
+                request.TimeZone,
+                request.Locale,
                 Roles.Student);
 
             var result = await sender.Send(command);

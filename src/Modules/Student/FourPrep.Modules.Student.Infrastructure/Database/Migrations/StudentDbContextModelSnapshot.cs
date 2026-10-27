@@ -68,6 +68,11 @@ namespace FourPrep.Modules.Student.Infrastructure.Database.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("id");
 
+                    b.Property<string>("Country")
+                        .HasMaxLength(2)
+                        .HasColumnType("character varying(2)")
+                        .HasColumnName("country");
+
                     b.Property<DateTimeOffset>("CreatedOnUtc")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_on_utc");
@@ -100,8 +105,9 @@ namespace FourPrep.Modules.Student.Infrastructure.Database.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("mentor_user_id");
 
-                    b.Property<int?>("Region")
-                        .HasColumnType("integer")
+                    b.Property<string>("Region")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
                         .HasColumnName("region");
 
                     b.Property<string>("School")
@@ -125,6 +131,9 @@ namespace FourPrep.Modules.Student.Infrastructure.Database.Migrations
 
                     b.HasKey("Id")
                         .HasName("pk_students");
+
+                    b.HasIndex("Country")
+                        .HasDatabaseName("ix_students_country");
 
                     b.HasIndex("LinkCode")
                         .IsUnique()

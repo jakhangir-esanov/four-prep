@@ -51,4 +51,10 @@ public static class UserErrors
         en: "An administrator cannot block their own account.",
         uz: "Administrator o'z hisobini bloklay olmaydi.",
         ru: "Администратор не может заблокировать собственную учётную запись.");
+
+    public static readonly Error EmailAlreadyVerified = Error.Conflict(
+        "User.EmailAlreadyVerified",
+        en: "This email address is already verified.",
+        uz: "Bu email manzil allaqachon tasdiqlangan.",
+        ru: "Этот адрес электронной почты уже подтверждён.");
 }
