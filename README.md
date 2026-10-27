@@ -13,10 +13,12 @@ Kerak bo'ladi: .NET 10 SDK, Docker va `localhost:5432` da ishlab turgan PostgreS
 2. Keycloak va Mailpit'ni ishga tushiring:
 
    ```bash
-   docker compose up -d
+   docker compose up -d --build
    ```
 
-   Birinchi ishga tushishda `keycloak/realms/fourprep-realm.json` dagi `fourprep` realm'i import qilinadi. Unda 7 ta rol, `fourprep-api` client'i (audience va `country` mapper'lari, service account huquqlari bilan), token muddatlari, tillar (en, uz, ru), SMTP sozlamasi va User Profile bor. Realm allaqachon mavjud bo'lsa, import o'tkazib yuboriladi. Fayldagi o'zgarishni qo'llash uchun `fourprep_keycloak` bazasini o'chirib, qayta yarating.
+   Keycloak rasmiy image emas: `keycloak/Dockerfile` unga Google orqali kirish uchun extension qo'shadi (pastda "Google orqali kirish" bo'limi). Birinchi yig'ish Maven bilan bir necha daqiqa oladi va extension'ning unit testlarini ham ishga tushiradi.
+
+   Birinchi ishga tushishda `keycloak/realms/fourprep-realm.json` dagi `fourprep` realm'i import qilinadi. Unda 7 ta rol, `fourprep-api` client'i (audience va `country` mapper'lari, service account huquqlari bilan), token muddatlari, tillar (en, uz, ru), SMTP sozlamasi, User Profile, `google` identity provider'i va `fourprep direct grant` oqimi bor. Realm allaqachon mavjud bo'lsa, import o'tkazib yuboriladi. Fayldagi o'zgarishni qo'llash uchun `fourprep_keycloak` bazasini o'chirib, qayta yarating.
 
 3. API'ni ishga tushiring:
 
@@ -68,6 +70,51 @@ SMS butun dunyoda ishonchli emas, shuning uchun ikkalasi ham email orqali, Keycl
 - **Parolni tiklash.** `POST /auth/forgot-password` `{ "email": "..." }` qabul qiladi va har doim `200` qaytaradi, shunda bu endpoint orqali kim ro'yxatdan o'tganini bilib bo'lmaydi. Havola 1 soat amal qiladi.
 - **Cheklov.** Ikkala endpoint bitta IP manzildan 15 daqiqada 5 tadan ko'p chaqirilsa, `429` qaytaradi. Prod'da API proxy ortida tursa, haqiqiy IP uchun forwarded header'larni sozlash kerak.
 - **Sozlama.** `Identity:Keycloak:EmailRedirectUrl` xatdagi "ilovaga qaytish" havolasi; u `fourprep-api` client'ining redirect URI'lari ichida bo'lishi kerak. Lokalda xatlar Mailpit'ga tushadi. Prod'da realm'ning SMTP sozlamasini haqiqiy pochta serveriga almashtiring.
+
+## Google orqali kirish
+
+Frontend Google'ning o'z kutubxonasidan (web uchun Google Identity Services) `id_token` oladi va `POST /auth/google` ga yuboradi. Frontend Keycloak bilan gaplashmaydi. Javob `/auth/login` niki bilan bir xil, shuning uchun refresh, logout va logout-all o'zgarishsiz ishlaydi.
+
+```json
+{ "idToken": "eyJ...", "role": "student", "country": "US", "timeZone": "America/New_York", "locale": "en" }
+```
+
+- **Kim kira oladi.** Faqat foydalanuvchi panelidagilar: `student` va `parent`. Xodimlar (`mentor`, `teacher`, `mentor_admin`, `content_admin`, `super_admin`) Google orqali na ro'yxatdan o'ta oladi, na kira oladi; ular xodimlar paneliga faqat login va parol bilan kiradi. Xodim o'z emaili bilan Google orqali kirmoqchi bo'lsa, `403 Authentication.GoogleSignInNotAllowed` qaytadi, hisob Google'ga bog'lanmaydi va paroli o'zgarmaydi. Bitta hisobda foydalanuvchi va xodim roli birga bo'lsa ham rad etiladi.
+- **Birinchi kirish.** Keycloak'da bu Google hisobi uchun foydalanuvchi ochiladi, lekin unda hali rol yo'q. So'rovda `role` (`student` yoki `parent`) va `country` bo'lmasa, API `400 Authentication.SignUpDetailsRequired` qaytaradi va ochilgan sessiyani yopadi. Frontend shu xatoni olganda rol va davlatni so'raydi, keyin o'sha `idToken` bilan qayta yuboradi (Google token'i 1 soat amal qiladi). `timeZone` va `locale` ixtiyoriy. Rol berilgach, o'quvchiga profil ochiladi, xuddi `/auth/register` dagidek.
+- **Frontend uchun tavsiya.** `timeZone` (`Intl.DateTimeFormat().resolvedOptions().timeZone`) va `locale` (interfeys tili) ni so'ramasdan har doim yuboring. Ro'yxatdan o'tish sahifasida "O'quvchi / Ota-ona" tanlovi va davlat Google tugmasidan oldin bo'lsa, birinchi kirish bitta so'rovda tugaydi. Kirish sahifasida esa faqat `idToken` yuboring va `SignUpDetailsRequired` kelsa, rol va davlatni so'rang.
+- **Keyingi kirishlar.** Faqat `idToken` kerak. `role`, `country` va boshqalar e'tiborga olinmaydi.
+- **Username.** `google-<Google sub>`, masalan `google-108234567890`. Email va ism Google token'idan olinadi; Google tasdiqlagan email tasdiqlangan deb belgilanadi, shuning uchun tasdiqlash xati yuborilmaydi.
+- **Xatolar.** Soxta, muddati o'tgan yoki boshqa client uchun chiqarilgan token, shuningdek bloklangan hisob — hammasi `Authentication.InvalidGoogleToken`. Parol bilan kirishda ham bloklangan hisob noto'g'ri parol bilan bir xil ko'rinadi.
+
+### Hisoblar qanday bog'lanadi
+
+Har qadamda topilgan hisobning rollari tekshiriladi: realm'ning standart rollaridan tashqari `student` va `parent` dan boshqa roli bo'lsa, hisob rad etiladi va hech narsa o'zgartirilmaydi.
+
+1. Google hisobi avval bog'langan bo'lsa, o'sha foydalanuvchi.
+2. Aks holda Google tasdiqlagan email bo'yicha mavjud hisob qidiriladi va Google'ga bog'lanadi. Shu hisobning emaili tasdiqlanmagan bo'lsa, u **egallab olinadi**: barcha parollari o'chiriladi, barcha sessiyalari (offline ham) yopiladi va email tasdiqlangan bo'ladi. Sabab: `/auth/register` emailni tasdiqlamaydi, shuning uchun istalgan odam birovning manzili bilan parolli hisob ochib qo'yishi mumkin. Haqiqiy egasi Google bilan kirganda bu hisobga u kira olmay qoladi. Emaili tasdiqlangan hisob parolini saqlaydi.
+3. Aks holda yangi foydalanuvchi ochiladi.
+
+### Nega Keycloak extension
+
+Google token'ini oddiy Keycloak sessiyasiga (refresh token bilan) aylantirishning Keycloak'da tayyor yo'li yo'q: JWT Authorization Grant (RFC 7523) refresh token bermaydi, eski external token exchange esa preview holatida va undan voz kechilmoqda. Shuning uchun `keycloak/fourprep-keycloak-extensions` dagi `fourprep-external-id-token` authenticator'i ishlatiladi. U tofan'dan olingan: Apple uchun kerak bo'lgan qismi olib tashlangan, xodimlarni rad etish qo'shilgan.
+
+- API parol bilan kirishdagi password grant'ni yuboradi, faqat parol o'rniga `external_provider=google` va `external_id_token` bilan. Keycloak bu grant uchun `username` ni majburiy qiladi, shuning uchun unga `google` yoziladi; authenticator uni e'tiborsiz qoldiradi.
+- Realm'ning direct grant oqimi `fourprep direct grant`: birinchi muqobil — authenticator, ikkinchisi — oddiy username/parol (OTP bilan). Google parametrlari bo'lmasa, so'rov parol yo'liga o'tadi.
+- Qaysi rollar Google ishlata olishi authenticator'ning `allowedRoles` sozlamasida (realm faylida `fourprep external sign-in roles`, hozir `student##parent`). Yangi foydalanuvchi roli qo'shilsa, shu yerga ham yozing. Sozlama bo'lmasa, authenticator Google kirishning hammasini rad etadi. tofan'dagi extension'da bu tekshiruv yo'q, u FourPrep uchun qo'shilgan. API ham Keycloak'dan keyin rollarni qayta tekshiradi.
+- Token imzosi Keycloak'ning kalit keshi orqali Google'ning JWKS'i bo'yicha tekshiriladi, keyin `iss`, `aud`, `sub` va `exp`. `azp` tekshirilmaydi, chunki keyinchalik mobil ilova token'ida `azp` Android/iOS client bo'ladi, `aud` esa Web client. Provider'da `validateSignature` o'chirilgan bo'lsa, authenticator hamma token'ni rad etadi.
+- Authenticator Keycloak'ning ichki SPI'sida yozilgan. Keycloak har ko'tarilganda extension'ni yangi versiyaga qarshi yig'ib, Google bilan kirishni qayta tekshiring. Ishga tushishda `KC-SERVICES0047 ... internal SPI` ogohlantirishi chiqadi — bu kutilgan holat, extension yuklangan degani.
+
+### Sozlash
+
+Google Cloud Console → **APIs & Services → Credentials → Create credentials → OAuth client ID** → turi **Web application**, **Authorized JavaScript origins** ga frontend manzili (lokalda `http://localhost:4200`). Client secret kerak emas: Keycloak faqat token'ning `aud` qiymatini shu client ID bilan solishtiradi.
+
+Client ID'ni repo ildizidagi `.env` fayliga yozing (u git'ga tushmaydi):
+
+```bash
+GOOGLE_CLIENT_ID=1234567890-abc.apps.googleusercontent.com
+```
+
+Realm import paytida `${GOOGLE_CLIENT_ID}` shu qiymat bilan almashtiriladi. Realm allaqachon import qilingan bo'lsa, `fourprep_keycloak` bazasini qayta yarating yoki Keycloak konsolida **Identity providers → google → Client ID** ni o'zgartiring. Frontend ham Google kutubxonasini shu client ID bilan ishga tushiradi.
 
 ## Dasturchilar uchun eslatmalar
 

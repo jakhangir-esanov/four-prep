@@ -148,5 +148,114 @@
         }
       }
     ]
-  }
+  },
+  "identityProviders": [
+    {
+      "alias": "google",
+      "providerId": "google",
+      "enabled": true,
+      "hideOnLogin": true,
+      "trustEmail": false,
+      "storeToken": false,
+      "addReadTokenRoleOnCreate": false,
+      "linkOnly": false,
+      "config": {
+        "clientId": "${GOOGLE_CLIENT_ID:not-configured}",
+        "clientSecret": "not-used",
+        "issuer": "https://accounts.google.com",
+        "useJwksUrl": "true",
+        "jwksUrl": "https://www.googleapis.com/oauth2/v3/certs",
+        "validateSignature": "true",
+        "syncMode": "IMPORT"
+      }
+    }
+  ],
+  "authenticationFlows": [
+    {
+      "alias": "fourprep direct grant",
+      "description": "Google ID token, or username and password",
+      "providerId": "basic-flow",
+      "topLevel": true,
+      "builtIn": false,
+      "authenticationExecutions": [
+        {
+          "authenticator": "fourprep-external-id-token",
+          "authenticatorFlow": false,
+          "requirement": "ALTERNATIVE",
+          "priority": 10,
+          "userSetupAllowed": false,
+          "authenticatorConfig": "fourprep external sign-in roles"
+        },
+        {
+          "authenticatorFlow": true,
+          "flowAlias": "fourprep password",
+          "requirement": "ALTERNATIVE",
+          "priority": 20,
+          "userSetupAllowed": false
+        }
+      ]
+    },
+    {
+      "alias": "fourprep password",
+      "description": "Username and password, with OTP when the user has one",
+      "providerId": "basic-flow",
+      "topLevel": false,
+      "builtIn": false,
+      "authenticationExecutions": [
+        {
+          "authenticator": "direct-grant-validate-username",
+          "authenticatorFlow": false,
+          "requirement": "REQUIRED",
+          "priority": 10,
+          "userSetupAllowed": false
+        },
+        {
+          "authenticator": "direct-grant-validate-password",
+          "authenticatorFlow": false,
+          "requirement": "REQUIRED",
+          "priority": 20,
+          "userSetupAllowed": false
+        },
+        {
+          "authenticatorFlow": true,
+          "flowAlias": "fourprep password conditional otp",
+          "requirement": "CONDITIONAL",
+          "priority": 30,
+          "userSetupAllowed": false
+        }
+      ]
+    },
+    {
+      "alias": "fourprep password conditional otp",
+      "description": "OTP when the user has configured one",
+      "providerId": "basic-flow",
+      "topLevel": false,
+      "builtIn": false,
+      "authenticationExecutions": [
+        {
+          "authenticator": "conditional-user-configured",
+          "authenticatorFlow": false,
+          "requirement": "REQUIRED",
+          "priority": 10,
+          "userSetupAllowed": false
+        },
+        {
+          "authenticator": "direct-grant-validate-otp",
+          "authenticatorFlow": false,
+          "requirement": "REQUIRED",
+          "priority": 20,
+          "userSetupAllowed": false
+        }
+      ]
+    }
+  ],
+  "directGrantFlow": "fourprep direct grant",
+  "authenticatorConfig": [
+    {
+      "alias": "fourprep external sign-in roles",
+      "config": {
+        "allowedRoles": "student##parent"
+      }
+    }
+  ]
 }

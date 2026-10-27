@@ -45,6 +45,12 @@ internal sealed partial class KeycloakAdminClient(
     private const string UsernameField = "username";
     private const string PasswordField = "password";
     private const string RefreshTokenField = "refresh_token";
+    private const string ExternalProviderField = "external_provider";
+    private const string ExternalIdTokenField = "external_id_token";
+
+    private const string GoogleProviderAlias = "google";
+    private const string ErrorDescriptionField = "error_description";
+    private const string ExternalSignInNotAllowedDescription = "Account is not allowed to use external sign-in";
 
     private const string PasswordGrant = "password";
     private const string ClientCredentialsGrant = "client_credentials";
@@ -182,6 +188,23 @@ internal sealed partial class KeycloakAdminClient(
         };
 
         return RequestTokenAsync(payload, AuthenticationErrors.InvalidCredentials, cancellationToken);
+    }
+
+    public Task<Result<IdentityTokenResult>> LoginWithGoogleAsync(
+        string idToken,
+        CancellationToken cancellationToken = default)
+    {
+        var payload = new Dictionary<string, string>
+        {
+            [GrantTypeField] = PasswordGrant,
+            [ClientIdField] = _options.ClientId,
+            [ClientSecretField] = _options.ClientSecret,
+            [UsernameField] = GoogleProviderAlias,
+            [ExternalProviderField] = GoogleProviderAlias,
+            [ExternalIdTokenField] = idToken
+        };
+
+        return RequestTokenAsync(payload, AuthenticationErrors.InvalidGoogleToken, cancellationToken);
     }
 
     public Task<Result<IdentityTokenResult>> RefreshAsync(
@@ -540,7 +563,22 @@ internal sealed partial class KeycloakAdminClient(
             (int)response.StatusCode,
             errorContent);
 
-        return Result.Failure<IdentityTokenResult>(failureError);
+        return Result.Failure<IdentityTokenResult>(
+            ReadErrorDescription(errorContent) == ExternalSignInNotAllowedDescription
+                ? AuthenticationErrors.GoogleSignInNotAllowed
+                : failureError);
+    }
+
+    private static string? ReadErrorDescription(string errorContent)
+    {
+        try
+        {
+            return JObject.Parse(errorContent)[ErrorDescriptionField]?.Value<string>();
+        }
+        catch (JsonReaderException)
+        {
+            return null;
+        }
     }
 
     private string BuildUsersUrl() =>

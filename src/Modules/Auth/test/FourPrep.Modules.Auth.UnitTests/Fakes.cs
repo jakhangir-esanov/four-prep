@@ -83,6 +83,10 @@ internal sealed class FakeIdentityProviderClient : IIdentityProviderClient
 
     public List<(Guid UserId, string Role)> AssignedRoles { get; } = [];
 
+    public Dictionary<Guid, List<string>> RealmRoles { get; } = [];
+
+    public List<string> LoggedOutRefreshTokens { get; } = [];
+
     public Dictionary<Guid, string> Passwords { get; } = [];
 
     public List<Guid> VerificationEmails { get; } = [];
@@ -95,6 +99,12 @@ internal sealed class FakeIdentityProviderClient : IIdentityProviderClient
 
     public Result<IdentityTokenResult> LoginResult { get; set; } =
         Result.Failure<IdentityTokenResult>(AuthenticationErrors.InvalidCredentials);
+
+    public Result<IdentityTokenResult> GoogleLoginResult { get; set; } =
+        Result.Failure<IdentityTokenResult>(AuthenticationErrors.InvalidGoogleToken);
+
+    public Result<IdentityTokenResult> RefreshResult { get; set; } =
+        Result.Failure<IdentityTokenResult>(AuthenticationErrors.InvalidRefreshToken);
 
     public UserResponse Add(string userName, bool isActive)
     {
@@ -177,12 +187,19 @@ internal sealed class FakeIdentityProviderClient : IIdentityProviderClient
         string username, string password, CancellationToken cancellationToken = default) =>
         Task.FromResult(LoginResult);
 
+    public Task<Result<IdentityTokenResult>> LoginWithGoogleAsync(
+        string idToken, CancellationToken cancellationToken = default) =>
+        Task.FromResult(GoogleLoginResult);
+
     public Task<Result<IdentityTokenResult>> RefreshAsync(
         string refreshToken, CancellationToken cancellationToken = default) =>
-        throw new NotSupportedException();
+        Task.FromResult(RefreshResult);
 
-    public Task<Result> LogoutAsync(string refreshToken, CancellationToken cancellationToken = default) =>
-        throw new NotSupportedException();
+    public Task<Result> LogoutAsync(string refreshToken, CancellationToken cancellationToken = default)
+    {
+        LoggedOutRefreshTokens.Add(refreshToken);
+        return Task.FromResult(Result.Success());
+    }
 
     public Task<Result<UserResponse>> FindUserByEmailAsync(string email, CancellationToken cancellationToken = default)
     {
@@ -213,7 +230,8 @@ internal sealed class FakeIdentityProviderClient : IIdentityProviderClient
 
     public Task<Result<IReadOnlyList<string>>> GetUserRealmRolesAsync(
         Guid userId, CancellationToken cancellationToken = default) =>
-        throw new NotSupportedException();
+        Task.FromResult(Result.Success<IReadOnlyList<string>>(
+            RealmRoles.TryGetValue(userId, out var roles) ? roles : []));
 
     public Task<Result> AssignRealmRoleAsync(
         Guid userId, string roleName, CancellationToken cancellationToken = default)
@@ -224,6 +242,7 @@ internal sealed class FakeIdentityProviderClient : IIdentityProviderClient
         }
 
         AssignedRoles.Add((userId, roleName));
+        RealmRoles[userId] = [.. RealmRoles.GetValueOrDefault(userId) ?? [], roleName];
         return Task.FromResult(Result.Success());
     }
 }

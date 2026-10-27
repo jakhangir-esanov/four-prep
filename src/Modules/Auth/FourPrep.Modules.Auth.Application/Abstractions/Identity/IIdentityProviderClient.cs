@@ -33,6 +33,10 @@ public interface IIdentityProviderClient
         string password,
         CancellationToken cancellationToken = default);
 
+    Task<Result<IdentityTokenResult>> LoginWithGoogleAsync(
+        string idToken,
+        CancellationToken cancellationToken = default);
+
     Task<Result<IdentityTokenResult>> RefreshAsync(
         string refreshToken,
         CancellationToken cancellationToken = default);

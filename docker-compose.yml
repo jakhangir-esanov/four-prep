@@ -1,6 +1,7 @@
 services:
   keycloak:
-    image: quay.io/keycloak/keycloak:26.8.0
+    build: ./keycloak
+    image: fourprep-keycloak:dev
     container_name: fourprep-keycloak
     environment:
       KC_BOOTSTRAP_ADMIN_USERNAME: admin
@@ -9,6 +10,7 @@ services:
       KC_DB_URL: jdbc:postgresql://host.docker.internal:5432/fourprep_keycloak
       KC_DB_USERNAME: postgres
       KC_DB_PASSWORD: postgres
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-not-configured}
     ports:
       - '8080:8080'
     command: start-dev --import-realm

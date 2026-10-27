@@ -291,3 +291,6 @@ secrets/
 
 # graphify knowledge graph, rebuilt locally with /graphify
 graphify-out/
+
+# Local docker-compose settings (GOOGLE_CLIENT_ID)
+.env

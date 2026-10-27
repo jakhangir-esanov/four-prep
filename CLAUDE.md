@@ -37,7 +37,8 @@ Backend stack:
 - PostgreSQL / Npgsql, snake_case naming
 - MediatR, FluentValidation
 - Serilog
-- Keycloak 26 (OAuth2 / OIDC, JWT bearer), run locally through `docker-compose.yml`
+- Keycloak 26.8 (OAuth2 / OIDC, JWT bearer) with a FourPrep extension for Google sign-in, run locally
+  through `docker-compose.yml`
 - Hangfire (PostgreSQL storage, registered by the Auth module)
 - Mailpit as the local SMTP server for Keycloak's emails
 
@@ -135,8 +136,11 @@ src/
         FourPrep.Modules.<Module>.UnitTests/
 test/
   FourPrep.ArchitectureTests/  solution-wide rules (module isolation, Domain and Infrastructure folders)
-keycloak/realms/fourprep-realm.json   imported on Keycloak's first start
-docker-compose.yml                    Keycloak + Mailpit
+keycloak/
+  Dockerfile                          Keycloak image with the extension below
+  fourprep-keycloak-extensions/       Google ID token authenticator (Java 21, Maven)
+  realms/fourprep-realm.json          imported on Keycloak's first start
+docker-compose.yml                    Keycloak (built from keycloak/) + Mailpit
 four-prep.slnx
 ```
 
@@ -235,8 +239,19 @@ edit them by hand.
 
 ### 6.10 Keycloak is the identity provider
 Users live in Keycloak, not in a FourPrep table. The Auth module talks to Keycloak through
-`IIdentityProviderClient`; other modules never call Keycloak. Login is username and password only.
-Email verification and password reset use Keycloak's own emails (no SMS).
+`IIdentityProviderClient`; other modules never call Keycloak. Users sign in with username and password,
+or with a Google ID token (`POST /auth/google`). Email verification and password reset use Keycloak's
+own emails (no SMS).
+
+Google sign-in goes through the `fourprep-external-id-token` authenticator in
+`keycloak/fourprep-keycloak-extensions` (Java, ported from tofan), bound as the realm's direct grant
+flow. The API sends the ordinary password grant with `external_provider` and `external_id_token`, and
+gets a normal session with a refresh token. Only `student` and `parent` accounts may use it: the
+authenticator's `allowedRoles` config in the realm file refuses staff before any account is linked, and
+`GoogleLoginCommand` checks the roles again. Do not replace it with Keycloak's JWT authorization grant
+or token exchange: neither issues a refresh token here. The authenticator uses Keycloak's internal SPI,
+so rebuild and retest it on every Keycloak upgrade. `README.md` ("Google orqali kirish") has the
+account-linking rules and setup.
 
 Profile values the platform needs on every request (`country`, `zoneinfo`, `locale`) are Keycloak
 user attributes that reach the access token as claims. A new attribute must also be declared in the
