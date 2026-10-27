@@ -6,8 +6,6 @@ using FourPrep.Modules.Auth.Application.Abstractions.Identity;
 
 public sealed record ForgotPasswordCommand(string Email) : ICommand;
 
-// Always succeeds, whether or not the email belongs to an account, so the endpoint
-// cannot be used to find out who is registered.
 internal sealed class ForgotPasswordCommandHandler(
     IIdentityProviderClient identityProviderClient) : ICommandHandler<ForgotPasswordCommand>
 {

@@ -3,8 +3,6 @@ namespace FourPrep.Modules.Auth.Application.Abstractions.Identity;
 using FourPrep.Common.Domain.Localization;
 using FourPrep.Modules.Auth.Application.Users.GetUser;
 
-// Profile values kept on the identity account. Country, time zone and locale reach the access
-// token as the country, zoneinfo and locale claims, so every module can read them without a lookup.
 public sealed record UserAttributes(
     string? PhoneNumber,
     string? Country,
@@ -13,7 +11,6 @@ public sealed record UserAttributes(
 {
     public static readonly UserAttributes None = new(null, null, null, null);
 
-    // Keycloak replaces every attribute on update, so an update starts from what the account already has.
     public static UserAttributes Of(UserResponse user) =>
         new(user.PhoneNumber, user.Country, user.TimeZone, user.Locale);
 

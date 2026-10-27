@@ -1,6 +1,5 @@
 namespace FourPrep.Common.Domain.Localization;
 
-// ISO 3166-1 alpha-2 country codes. Stored upper case, the way the standard writes them.
 public static class Countries
 {
     private static readonly HashSet<string> Codes = new(StringComparer.Ordinal)

@@ -564,7 +564,6 @@ internal sealed partial class KeycloakAdminClient(
     private string BuildUserActionsEmailUrl(Guid userId) =>
         string.Format(AdminUserActionsEmailUrlTemplate, _options.Realm, userId);
 
-    // Where the email's "back to application" link leads; it must be one of the client's redirect URIs.
     private List<string> BuildEmailLinkParameters()
     {
         if (string.IsNullOrWhiteSpace(_options.EmailRedirectUrl))

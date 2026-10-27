@@ -4,7 +4,6 @@ using Microsoft.AspNetCore.Http;
 using FourPrep.Common.Application.Clock;
 using FourPrep.Common.Infrastructure.Authentication;
 
-// The signed-in user's own time zone (the zoneinfo claim), or UTC when there is none.
 internal sealed class TimeZoneContext(
     IDateTimeProvider dateTimeProvider,
     IHttpContextAccessor httpContextAccessor) : ITimeZoneContext

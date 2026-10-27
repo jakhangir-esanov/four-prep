@@ -5,7 +5,6 @@ using FourPrep.Common.Application.Messaging;
 using FourPrep.Modules.Auth.Application.Abstractions.Identity;
 using FourPrep.Modules.Auth.Application.Abstractions.Authentication;
 
-// The new values reach the access token on the next refresh.
 public sealed record UpdateMyAccountCommand(
     string? PhoneNumber,
     string Country,

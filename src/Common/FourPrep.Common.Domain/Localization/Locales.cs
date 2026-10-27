@@ -1,6 +1,5 @@
 namespace FourPrep.Common.Domain.Localization;
 
-// Languages the platform has messages for. They match LocalizedMessage and the Keycloak realm.
 public static class Locales
 {
     public const string English = "en";

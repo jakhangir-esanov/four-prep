@@ -2,7 +2,6 @@ namespace FourPrep.Common.Application.Clock;
 
 public static class TimeZones
 {
-    // Used when a user has not told us their time zone (and for jobs that run outside a request).
     public const string DefaultIanaId = "UTC";
 
     public static readonly TimeZoneInfo Default = TimeZoneInfo.Utc;
@@ -24,9 +23,7 @@ public static class TimeZones
             return true;
         }
 
-        // Windows names ("Pacific Standard Time") would resolve too; accept IANA names only,
-        // so the web, mobile apps and the token all spell a zone the same way.
-        if (!TimeZoneInfo.TryConvertIanaIdToWindowsId(ianaId, out _) ||
+        if (!IsIanaId(ianaId) ||
             !TimeZoneInfo.TryFindSystemTimeZoneById(ianaId, out TimeZoneInfo? found))
         {
             return false;
@@ -35,6 +32,9 @@ public static class TimeZones
         timeZone = found;
         return true;
     }
+
+    private static bool IsIanaId(string id) =>
+        TimeZoneInfo.TryConvertIanaIdToWindowsId(id, out _);
 
     public static DateTime ToLocal(DateTime utc, TimeZoneInfo timeZone) =>
         TimeZoneInfo.ConvertTimeFromUtc(DateTime.SpecifyKind(utc, DateTimeKind.Utc), timeZone);

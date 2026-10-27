@@ -17,7 +17,6 @@ public static class RuleBuilderExtensions
             .WithState(_ => error);
     }
 
-    // The rules below let an empty value through, so they fit optional fields; add NotEmpty() where one is required.
     public static IRuleBuilderOptions<T, string?> CountryCode<T>(this IRuleBuilder<T, string?> rule) =>
         rule.Must(code => string.IsNullOrWhiteSpace(code) || Countries.IsValid(code))
             .WithError(LocalizationErrors.InvalidCountry);

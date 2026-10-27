@@ -7,8 +7,6 @@ using FourPrep.Modules.Auth.Application.Abstractions.Identity;
 
 internal static class AccountRoles
 {
-    // Gives a freshly created account its role and, for students, their profile.
-    // On any failure the account is deleted so the username can be used again.
     public static async Task<Result> GrantAsync(
         IIdentityProviderClient identityProviderClient,
         IStudentService studentService,
@@ -32,10 +30,10 @@ internal static class AccountRoles
             return Result.Success();
         }
 
-        // Keycloak stores usernames in lower case; keep the profile in step with the token.
+        string keycloakUsername = username.ToLowerInvariant();
         var studentCreated = await studentService.CreateStudentAsync(
             userId,
-            username.ToLowerInvariant(),
+            keycloakUsername,
             country,
             cancellationToken);
 

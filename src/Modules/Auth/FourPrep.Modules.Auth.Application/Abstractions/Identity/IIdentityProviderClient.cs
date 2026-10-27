@@ -82,7 +82,6 @@ public interface IIdentityProviderClient
         string password,
         CancellationToken cancellationToken = default);
 
-    // Keycloak sends these emails in the user's locale, with a link that expires.
     Task<Result> SendVerificationEmailAsync(
         Guid userId,
         CancellationToken cancellationToken = default);

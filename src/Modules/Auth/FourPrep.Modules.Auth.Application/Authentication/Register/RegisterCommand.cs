@@ -63,7 +63,6 @@ internal sealed class RegisterCommandHandler(
             return Result.Failure<AuthTokenResponse>(roleGranted.Error);
         }
 
-        // A lost email must not undo the sign-up; the user can ask for another one from /auth/me.
         await identityProviderClient.SendVerificationEmailAsync(Guid.Parse(createResult.Data), cancellationToken);
 
         var loginResult = await identityProviderClient.LoginAsync(request.Username, request.Password, cancellationToken);
