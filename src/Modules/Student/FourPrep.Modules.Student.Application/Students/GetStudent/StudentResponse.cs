@@ -2,7 +2,7 @@ namespace FourPrep.Modules.Student.Application.Students.GetStudent;
 
 using FourPrep.Common.Domain.Enums;
 
-public sealed record StudentResponse
+public record StudentResponse
 {
     public Guid Id { get; init; }
     public Guid UserId { get; init; }
@@ -15,10 +15,14 @@ public sealed record StudentResponse
     public string? Country { get; init; }
     public string? Region { get; init; }
     public Guid? MentorUserId { get; init; }
-    public string LinkCode { get; init; } = string.Empty;
     public IReadOnlyList<ExamGoalResponse> ExamGoals { get; init; } = [];
     public DateTime CreatedOnUtc { get; init; }
     public DateTime UpdatedOnUtc { get; init; }
+}
+
+public sealed record MyStudentResponse : StudentResponse
+{
+    public string LinkCode { get; init; } = string.Empty;
 }
 
 public sealed record ExamGoalResponse

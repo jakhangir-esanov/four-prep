@@ -5,23 +5,27 @@ using System.Data.Common;
 
 internal static class StudentReader
 {
+    private const string OwnerOnlyColumns = $"link_code AS {nameof(MyStudentResponse.LinkCode)},";
+
     public static async Task<StudentResponse?> ReadByIdAsync(
         DbConnection connection,
         Guid id,
         CancellationToken cancellationToken) =>
-        await ReadAsync(connection, "id = @Value", id, cancellationToken);
+        await ReadAsync<StudentResponse>(connection, "id = @Value", id, string.Empty, cancellationToken);
 
-    public static async Task<StudentResponse?> ReadByUserIdAsync(
+    public static async Task<MyStudentResponse?> ReadOwnProfileAsync(
         DbConnection connection,
         Guid userId,
         CancellationToken cancellationToken) =>
-        await ReadAsync(connection, "user_id = @Value", userId, cancellationToken);
+        await ReadAsync<MyStudentResponse>(connection, "user_id = @Value", userId, OwnerOnlyColumns, cancellationToken);
 
-    private static async Task<StudentResponse?> ReadAsync(
+    private static async Task<TResponse?> ReadAsync<TResponse>(
         DbConnection connection,
         string condition,
         Guid value,
+        string extraColumns,
         CancellationToken cancellationToken)
+        where TResponse : StudentResponse
     {
         var studentSql =
             $"""
@@ -37,7 +41,7 @@ internal static class StudentReader
                 country AS {nameof(StudentResponse.Country)},
                 region AS {nameof(StudentResponse.Region)},
                 mentor_user_id AS {nameof(StudentResponse.MentorUserId)},
-                link_code AS {nameof(StudentResponse.LinkCode)},
+                {extraColumns}
                 created_on_utc AS {nameof(StudentResponse.CreatedOnUtc)},
                 updated_on_utc AS {nameof(StudentResponse.UpdatedOnUtc)}
             FROM
@@ -46,7 +50,7 @@ internal static class StudentReader
                 {condition}
             """;
 
-        var student = await connection.QuerySingleOrDefaultAsync<StudentResponse>(
+        var student = await connection.QuerySingleOrDefaultAsync<TResponse>(
             new CommandDefinition(studentSql, new { Value = value }, cancellationToken: cancellationToken));
 
         if (student is null)
@@ -69,6 +73,7 @@ internal static class StudentReader
         var examGoals = await connection.QueryAsync<ExamGoalResponse>(
             new CommandDefinition(examGoalsSql, new { StudentId = student.Id }, cancellationToken: cancellationToken));
 
-        return student with { ExamGoals = examGoals.AsList() };
+        StudentResponse profile = student;
+        return (TResponse)(profile with { ExamGoals = examGoals.AsList() });
     }
 }

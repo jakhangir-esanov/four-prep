@@ -22,7 +22,7 @@ internal sealed class GetMyStudent : IEndpoint
             return result.ToResponse();
         })
         .RequireAuthorization(Policies.Student)
-        .Produces<Result<StudentResponse>>(StatusCodes.Status200OK)
+        .Produces<Result<MyStudentResponse>>(StatusCodes.Status200OK)
         .Produces(StatusCodes.Status401Unauthorized)
         .Produces(StatusCodes.Status403Forbidden)
         .Produces<Result>(StatusCodes.Status404NotFound)
