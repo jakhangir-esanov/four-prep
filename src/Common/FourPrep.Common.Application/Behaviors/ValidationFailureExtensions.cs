@@ -7,13 +7,16 @@ using System.Globalization;
 using FluentValidation.Results;
 using FluentValidation.Internal;
 
-internal static class ValidationFailureExtensions
+public static class ValidationFailureExtensions
 {
     private static readonly CultureInfo Uzbek = CultureInfo.GetCultureInfo("uz");
     private static readonly CultureInfo Russian = CultureInfo.GetCultureInfo("ru");
 
     public static FieldError ToFieldError(this ValidationFailure failure) =>
-        new(failure.ErrorCode, failure.GetMessages(), ToJsonPath(failure.PropertyName));
+        failure.ToFieldError(ToJsonPath(failure.PropertyName));
+
+    public static FieldError ToFieldError(this ValidationFailure failure, string propertyName) =>
+        new(failure.ErrorCode, failure.GetMessages(), propertyName);
 
     private static LocalizedMessage GetMessages(this ValidationFailure failure)
     {

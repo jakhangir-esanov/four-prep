@@ -5,4 +5,7 @@
     <ProjectReference Include="..\FourPrep.Modules.Catalogue.Application\FourPrep.Modules.Catalogue.Application.csproj" />
     <ProjectReference Include="..\FourPrep.Modules.Catalogue.Presentation\FourPrep.Modules.Catalogue.Presentation.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="CsvHelper" Version="33.0.1" />
+  </ItemGroup>
 </Project>

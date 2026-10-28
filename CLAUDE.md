@@ -80,7 +80,7 @@ Modules in `src/Modules/`:
 |---|---|---|
 | Auth | Keycloak accounts, login, sessions, own account, staff accounts | implemented |
 | Student | profiles, parent links, mentors; later the student's stage and path, test scores, personal documents and offboarding | implemented (profiles, parent links, mentors) |
-| Catalogue | universities, programs, admission requirements, costs, deadlines, scholarships, destination countries; every fact carries its source | implemented (manual entry, public search); CSV import next |
+| Catalogue | universities, programs, admission requirements, costs, deadlines, scholarships, destination countries; every fact carries its source | implemented (manual entry, CSV import, public search) |
 | Content | news, results, partners, About, public staff profiles | skeleton, next to build |
 | Academy | courses, class groups, enrolments, attendance, mock scores, placement tests | skeleton |
 | Admission | academy application, university applications, portal accounts, essays, recommendations, university offers, visa | skeleton |

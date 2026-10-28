@@ -51,7 +51,7 @@ internal sealed class ProgramConfiguration : IEntityTypeConfiguration<Program>
         builder.Navigation(x => x.Requirements).UsePropertyAccessMode(PropertyAccessMode.Field);
         builder.Navigation(x => x.Deadlines).UsePropertyAccessMode(PropertyAccessMode.Field);
 
-        builder.HasIndex(x => x.UniversityId);
+        builder.HasIndex(x => new { x.UniversityId, x.Name }).IsUnique();
         builder.HasIndex(x => x.Field);
         builder.HasIndex(x => x.DegreeLevel);
     }

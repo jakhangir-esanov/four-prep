@@ -1,7 +1,9 @@
 namespace FourPrep.Modules.Catalogue.UnitTests;
 
 using System.Data.Common;
+using FourPrep.Common.Domain;
 using FourPrep.Common.Application.Clock;
+using FourPrep.Modules.Catalogue.Application.Abstractions.Csv;
 using FourPrep.Modules.Catalogue.Domain.Programs;
 using FourPrep.Modules.Catalogue.Domain.Destinations;
 using FourPrep.Modules.Catalogue.Domain.Universities;
@@ -88,6 +90,9 @@ internal sealed class FakeUniversityRepository : IUniversityRepository
     public Task<University?> GetAsync(Guid id, CancellationToken cancellationToken = default) =>
         Task.FromResult(Universities.SingleOrDefault(x => x.Id == id));
 
+    public Task<University?> GetBySlugAsync(string slug, CancellationToken cancellationToken = default) =>
+        Task.FromResult(Universities.SingleOrDefault(x => x.Slug == slug));
+
     public Task<bool> ExistsAsync(Guid id, CancellationToken cancellationToken = default) =>
         Task.FromResult(Universities.Any(x => x.Id == id));
 
@@ -103,11 +108,11 @@ internal sealed class FakeProgramRepository : IProgramRepository
 {
     public List<Program> Programs { get; } = [];
 
-    public Program Add(Guid universityId)
+    public Program Add(Guid universityId, string name = "BSc Computer Science")
     {
         var program = Program.Create(
             universityId,
-            "BSc Computer Science",
+            name,
             Common.Domain.Enums.DegreeLevel.Bachelor,
             "Computer Science",
             "en",
@@ -123,7 +128,43 @@ internal sealed class FakeProgramRepository : IProgramRepository
     public Task<Program?> GetAsync(Guid id, CancellationToken cancellationToken = default) =>
         Task.FromResult(Programs.SingleOrDefault(x => x.Id == id));
 
+    public Task<Program?> GetByNameAsync(Guid universityId, string name, CancellationToken cancellationToken = default) =>
+        Task.FromResult(Programs.SingleOrDefault(x => x.UniversityId == universityId && x.Name == name));
+
+    public Task<bool> IsNameTakenAsync(
+        Guid universityId,
+        string name,
+        Guid? exceptProgramId,
+        CancellationToken cancellationToken = default) =>
+        Task.FromResult(Programs.Any(x => x.UniversityId == universityId && x.Name == name && x.Id != exceptProgramId));
+
     public void Insert(Program program) => Programs.Add(program);
 
     public void Remove(Program program) => Programs.Remove(program);
+}
+
+internal sealed class FakeCsvReader(params string[] lines) : ICsvReader
+{
+    private const char Separator = ',';
+    private const int FirstDataRow = 2;
+
+    public Error? Failure { get; init; }
+
+    public Result<CsvTable> Read(Stream stream)
+    {
+        if (Failure is not null)
+        {
+            return Result.Failure<CsvTable>(Failure);
+        }
+
+        string[] columns = lines.Length == 0 ? [] : lines[0].Split(Separator);
+        var rows = lines
+            .Skip(1)
+            .Select((line, index) => new CsvRow(
+                index + FirstDataRow,
+                columns.Zip(line.Split(Separator)).ToDictionary(cell => cell.First, cell => cell.Second)))
+            .ToList();
+
+        return new CsvTable(columns, rows);
+    }
 }

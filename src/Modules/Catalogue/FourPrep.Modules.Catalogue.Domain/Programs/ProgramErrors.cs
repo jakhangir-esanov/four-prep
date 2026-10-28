@@ -10,6 +10,12 @@ public static class ProgramErrors
         uz: "Ko'rsatilgan dastur topilmadi.",
         ru: "Указанная программа не найдена.");
 
+    public static readonly Error NameTaken = Error.Conflict(
+        "Program.NameTaken",
+        en: "This university already has a program with this name.",
+        uz: "Bu universitetda shu nomli dastur allaqachon bor.",
+        ru: "У этого университета уже есть программа с таким названием.");
+
     public static readonly Error InvalidLanguage = Error.Problem(
         "Program.InvalidLanguage",
         en: "The language of instruction must be a two-letter ISO 639-1 code, for example en, de or fr.",

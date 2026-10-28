@@ -23,7 +23,24 @@ public sealed record AdmissionRequirementInput(
     int? EssaysCount,
     bool? InterviewRequired,
     string SourceUrl,
-    DateOnly CheckedOn);
+    DateOnly CheckedOn)
+{
+    internal AdmissionRequirement ToRequirement() =>
+        AdmissionRequirement.Create(
+            IntakeTerm,
+            IntakeYear,
+            new Dictionary<Exam, decimal>(EnglishMinimums ?? new Dictionary<Exam, decimal>()),
+            SatPolicy,
+            SatMidRangeLow,
+            SatMidRangeHigh,
+            MinimumGpa,
+            GpaScale,
+            [.. (Documents ?? []).Select(TextInput.TrimmedOrNull).OfType<string>()],
+            EssaysCount,
+            InterviewRequired,
+            SourceUrl.Trim(),
+            CheckedOn);
+}
 
 public sealed record ReplaceProgramRequirementsCommand(
     Guid ProgramId,
@@ -44,7 +61,7 @@ internal sealed class ReplaceProgramRequirementsCommandHandler(
         }
 
         program.ReplaceRequirements(
-            request.Requirements.Select(ToRequirement),
+            request.Requirements.Select(requirement => requirement.ToRequirement()),
             currentUser.UserId,
             dateTimeProvider.UtcNow);
 
@@ -52,20 +69,4 @@ internal sealed class ReplaceProgramRequirementsCommandHandler(
 
         return Result.Success();
     }
-
-    private static AdmissionRequirement ToRequirement(AdmissionRequirementInput input) =>
-        AdmissionRequirement.Create(
-            input.IntakeTerm,
-            input.IntakeYear,
-            new Dictionary<Exam, decimal>(input.EnglishMinimums ?? new Dictionary<Exam, decimal>()),
-            input.SatPolicy,
-            input.SatMidRangeLow,
-            input.SatMidRangeHigh,
-            input.MinimumGpa,
-            input.GpaScale,
-            [.. (input.Documents ?? []).Select(TextInput.TrimmedOrNull).OfType<string>()],
-            input.EssaysCount,
-            input.InterviewRequired,
-            input.SourceUrl.Trim(),
-            input.CheckedOn);
 }

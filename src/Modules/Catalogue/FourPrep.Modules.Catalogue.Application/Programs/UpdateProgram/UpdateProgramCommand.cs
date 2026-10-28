@@ -23,6 +23,11 @@ internal sealed class UpdateProgramCommandHandler(
             return Result.Failure(ProgramErrors.NotFound);
         }
 
+        if (await repository.IsNameTakenAsync(program.UniversityId, request.Details.NormalizedName, program.Id, cancellationToken))
+        {
+            return Result.Failure(ProgramErrors.NameTaken);
+        }
+
         request.Details.ApplyTo(program, currentUser.UserId, dateTimeProvider.UtcNow);
 
         await unitOfWork.SaveChangesAsync(cancellationToken);

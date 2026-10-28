@@ -24,6 +24,11 @@ internal sealed class CreateProgramCommandHandler(
             return Result.Failure<Guid>(UniversityErrors.NotFound);
         }
 
+        if (await programRepository.IsNameTakenAsync(request.UniversityId, request.Details.NormalizedName, null, cancellationToken))
+        {
+            return Result.Failure<Guid>(ProgramErrors.NameTaken);
+        }
+
         var program = request.Details.ToProgram(request.UniversityId, currentUser.UserId, dateTimeProvider.UtcNow);
 
         programRepository.Insert(program);

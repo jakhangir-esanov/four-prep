@@ -15,7 +15,11 @@ public sealed record CostInput(
     long? LivingMinor,
     string Currency,
     string SourceUrl,
-    DateOnly CheckedOn);
+    DateOnly CheckedOn)
+{
+    internal Cost ToCost() =>
+        Cost.Create(AcademicYear, TuitionMinor, LivingMinor, Currencies.Normalize(Currency), SourceUrl.Trim(), CheckedOn);
+}
 
 public sealed record ReplaceUniversityCostsCommand(Guid UniversityId, IReadOnlyList<CostInput> Costs) : ICommand;
 
@@ -33,16 +37,7 @@ internal sealed class ReplaceUniversityCostsCommandHandler(
             return Result.Failure(UniversityErrors.NotFound);
         }
 
-        university.ReplaceCosts(
-            request.Costs.Select(cost => Cost.Create(
-                cost.AcademicYear,
-                cost.TuitionMinor,
-                cost.LivingMinor,
-                Currencies.Normalize(cost.Currency),
-                cost.SourceUrl.Trim(),
-                cost.CheckedOn)),
-            currentUser.UserId,
-            dateTimeProvider.UtcNow);
+        university.ReplaceCosts(request.Costs.Select(cost => cost.ToCost()), currentUser.UserId, dateTimeProvider.UtcNow);
 
         await unitOfWork.SaveChangesAsync(cancellationToken);
 

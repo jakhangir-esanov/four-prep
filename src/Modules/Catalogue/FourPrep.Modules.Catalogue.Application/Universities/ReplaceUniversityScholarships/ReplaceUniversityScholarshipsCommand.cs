@@ -16,7 +16,17 @@ public sealed record ScholarshipInput(
     IReadOnlyDictionary<string, string>? Amount,
     IReadOnlyDictionary<string, string>? Eligibility,
     string SourceUrl,
-    DateOnly CheckedOn);
+    DateOnly CheckedOn)
+{
+    internal Scholarship ToScholarship() =>
+        Scholarship.Create(
+            Name.Trim(),
+            Kind,
+            LocalizedTexts.Normalize(Amount),
+            LocalizedTexts.Normalize(Eligibility),
+            SourceUrl.Trim(),
+            CheckedOn);
+}
 
 public sealed record ReplaceUniversityScholarshipsCommand(
     Guid UniversityId,
@@ -37,13 +47,7 @@ internal sealed class ReplaceUniversityScholarshipsCommandHandler(
         }
 
         university.ReplaceScholarships(
-            request.Scholarships.Select(scholarship => Scholarship.Create(
-                scholarship.Name.Trim(),
-                scholarship.Kind,
-                LocalizedTexts.Normalize(scholarship.Amount),
-                LocalizedTexts.Normalize(scholarship.Eligibility),
-                scholarship.SourceUrl.Trim(),
-                scholarship.CheckedOn)),
+            request.Scholarships.Select(scholarship => scholarship.ToScholarship()),
             currentUser.UserId,
             dateTimeProvider.UtcNow);
 

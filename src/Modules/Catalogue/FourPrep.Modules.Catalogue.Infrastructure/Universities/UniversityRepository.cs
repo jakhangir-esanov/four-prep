@@ -11,6 +11,11 @@ internal sealed class UniversityRepository(CatalogueDbContext dbContext) : IUniv
         return await dbContext.Universities.SingleOrDefaultAsync(x => x.Id == id, cancellationToken);
     }
 
+    public async Task<University?> GetBySlugAsync(string slug, CancellationToken cancellationToken = default)
+    {
+        return await dbContext.Universities.SingleOrDefaultAsync(x => x.Slug == slug, cancellationToken);
+    }
+
     public async Task<bool> ExistsAsync(Guid id, CancellationToken cancellationToken = default)
     {
         return await dbContext.Universities.AnyAsync(x => x.Id == id, cancellationToken);

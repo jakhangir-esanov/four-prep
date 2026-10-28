@@ -201,6 +201,40 @@ public class ProgramCommandHandlerTests
         Assert.Equal(0, unitOfWork.SaveCount);
     }
 
+    [Fact]
+    public async Task Create_RefusesANameTheUniversityAlreadyUses()
+    {
+        var universities = new FakeUniversityRepository();
+        var university = universities.Add();
+        var programs = new FakeProgramRepository();
+        programs.Add(university.Id, "MSc Informatics");
+        var unitOfWork = new FakeUnitOfWork();
+
+        var result = await new CreateProgramCommandHandler(unitOfWork, new FakeCurrentUser(StaffUserId), programs, universities, new FakeClock())
+            .Handle(new CreateProgramCommand(university.Id, Details()), default);
+
+        Assert.Equal(ProgramErrors.NameTaken, result.Error);
+        Assert.Single(programs.Programs);
+        Assert.Equal(0, unitOfWork.SaveCount);
+    }
+
+    [Fact]
+    public async Task Update_RefusesANameAnotherProgramOfTheUniversityUses()
+    {
+        var universityId = Guid.NewGuid();
+        var programs = new FakeProgramRepository();
+        programs.Add(universityId, "MSc Informatics");
+        var program = programs.Add(universityId);
+        var unitOfWork = new FakeUnitOfWork();
+
+        var result = await new UpdateProgramCommandHandler(unitOfWork, new FakeCurrentUser(StaffUserId), programs, new FakeClock())
+            .Handle(new UpdateProgramCommand(program.Id, Details()), default);
+
+        Assert.Equal(ProgramErrors.NameTaken, result.Error);
+        Assert.Equal("BSc Computer Science", program.Name);
+        Assert.Equal(0, unitOfWork.SaveCount);
+    }
+
     private static ReplaceProgramRequirementsCommandHandler RequirementsHandler(FakeProgramRepository programs, FakeUnitOfWork unitOfWork) =>
         new(unitOfWork, new FakeCurrentUser(StaffUserId), programs, new FakeClock());
 }

@@ -8,7 +8,9 @@ using FourPrep.Common.Presentation.Endpoints;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.Extensions.DependencyInjection;
 using FourPrep.Modules.Catalogue.Domain.Programs;
+using FourPrep.Modules.Catalogue.Infrastructure.Csv;
 using FourPrep.Modules.Catalogue.Infrastructure.Json;
+using FourPrep.Modules.Catalogue.Application.Abstractions.Csv;
 using FourPrep.Modules.Catalogue.Domain.Destinations;
 using FourPrep.Modules.Catalogue.Domain.Universities;
 using FourPrep.Modules.Catalogue.Infrastructure.Database;
@@ -47,6 +49,7 @@ public static class CatalogueModule
         services.AddScoped<IDestinationRepository, DestinationRepository>();
         services.AddScoped<IUniversityRepository, UniversityRepository>();
         services.AddScoped<IProgramRepository, ProgramRepository>();
+        services.AddSingleton<ICsvReader, CsvFileReader>();
 
         SqlMapper.AddTypeHandler(new JsonTypeHandler<Dictionary<string, string>>());
         SqlMapper.AddTypeHandler(new JsonTypeHandler<Dictionary<Exam, decimal>>());

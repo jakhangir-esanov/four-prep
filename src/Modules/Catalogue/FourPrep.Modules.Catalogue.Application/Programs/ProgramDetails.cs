@@ -12,10 +12,12 @@ public sealed record ProgramDetails(
     string SourceUrl,
     DateOnly CheckedOn)
 {
+    public string NormalizedName => Name.Trim();
+
     internal Program ToProgram(Guid universityId, Guid checkedByUserId, DateTime utcNow) =>
         Program.Create(
             universityId,
-            Name.Trim(),
+            NormalizedName,
             DegreeLevel,
             Field.Trim(),
             NormalizedLanguage,
@@ -27,7 +29,7 @@ public sealed record ProgramDetails(
 
     internal void ApplyTo(Program program, Guid checkedByUserId, DateTime utcNow) =>
         program.Update(
-            Name.Trim(),
+            NormalizedName,
             DegreeLevel,
             Field.Trim(),
             NormalizedLanguage,

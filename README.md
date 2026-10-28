@@ -47,7 +47,7 @@ Har bir modul o'z PostgreSQL sxemasiga ega va boshqa modulga faqat adapter orqal
 |---|---|---|
 | Auth | Keycloak hisoblari, login, sessiyalar, o'z hisobi, xodimlar hisoblari | tayyor |
 | Student | o'quvchi profili, ota-ona bog'lanishi, mentor; keyinroq o'quvchining bosqichi (stage) va yo'li, test ballari, shaxsiy hujjatlari va offboarding | profil, ota-ona va mentor tayyor |
-| Catalogue | universitetlar, dasturlar, qabul talablari, narxlar, muddatlar, grantlar, yo'nalish davlatlari | qo'lda kiritish va ochiq qidiruv tayyor; CSV import keyingi bosqichda |
+| Catalogue | universitetlar, dasturlar, qabul talablari, narxlar, muddatlar, grantlar, yo'nalish davlatlari | tayyor: qo'lda kiritish, CSV import, ochiq qidiruv |
 | Content | yangiliklar, natijalar (results), hamkorlar, About, xodimlarning ochiq profillari | skeleton |
 | Academy | kurslar, guruhlar, yozilish, davomat, mock ballar, placement test | skeleton |
 | Admission | academy arizasi, universitetlarga arizalar, portal akkauntlari, essay, tavsiyanomalar, universitet offerlari, viza | skeleton |
@@ -86,7 +86,7 @@ Foydalanuvchi paneli mehmon uchun ham ishlaydi: katalog, kurslar, yangiliklar ka
 
 ## Universitetlar katalogi (Catalogue)
 
-Katalog AI Counselor va My Plan uchun yagona fakt manbasi: AI universitet haqida faqat shu yerdagi ma'lumotni aytadi. Shuning uchun har bir fakt guruhi o'z manbasi (`sourceUrl`) va tekshirilgan sanasi (`checkedOn`) bilan saqlanadi. Ma'lumotni `content_admin` (va `super_admin`) staff panelda qo'lda kiritadi; CSV fayldan ommaviy import keyingi bosqichda qo'shiladi.
+Katalog AI Counselor va My Plan uchun yagona fakt manbasi: AI universitet haqida faqat shu yerdagi ma'lumotni aytadi. Shuning uchun har bir fakt guruhi o'z manbasi (`sourceUrl`) va tekshirilgan sanasi (`checkedOn`) bilan saqlanadi. Ma'lumotni `content_admin` (va `super_admin`) staff panelda qo'lda kiritadi yoki CSV fayllardan ommaviy yuklaydi (pastda "CSV import").
 
 **Tuzilishi.**
 
@@ -109,6 +109,7 @@ Katalog AI Counselor va My Plan uchun yagona fakt manbasi: AI universitet haqida
   - `PUT /admin/universities/{id}/costs`, `PUT /admin/universities/{id}/scholarships`.
   - `POST /admin/universities/{universityId}/programs`, `PUT` / `DELETE /admin/programs/{id}`.
   - `PUT /admin/programs/{id}/requirements`, `PUT /admin/programs/{id}/deadlines`.
+  - CSV import: `POST /admin/universities/import`, `/admin/programs/import`, `/admin/costs/import`, `/admin/scholarships/import`, `/admin/requirements/import`, `/admin/deadlines/import` (`multipart/form-data`, maydon nomi `file`).
 
 **Qoidalar va qarorlar.**
 
@@ -123,8 +124,26 @@ Katalog AI Counselor va My Plan uchun yagona fakt manbasi: AI universitet haqida
 - **Talablar.** Ingliz tili minimumi `{ "Ielts": 6.5, "Toefl": 90, "Duolingo": 120 }` — faqat shu uch test, har biri o'z shkalasida. SAT o'rtacha 50% oralig'i ikkita to'g'ri SAT bali, avval kichigi. GPA o'z shkalasi bilan (masalan 4.0 shkalada 3.5), chunki davlatlarda shkala har xil.
 - **Yo'nalish (`field`) erkin matn.** `GET /majors` dasturlarda yozilgan yo'nalishlardan qidiradi. Standart klassifikator (masalan ISCED-F) keyin, ma'lumot ko'paygach ko'rib chiqiladi.
 - **Logo** hozircha yo'q: Storage moduli qurilgach, fayl id'si qo'shiladi.
-- **Takrorlar.** Bir o'quv yiliga ikkita narx, bir dasturda ikki bir xil raund yoki qabul mavsumi validator'da rad etiladi. Ichki jadvallarda unique indeks yo'q: ro'yxat almashtirilganda eski qatorlar o'chib, yangilari shu saqlashda yoziladi.
+- **Takrorlar.** Bir o'quv yiliga ikkita narx, bir dasturda ikki bir xil raund yoki qabul mavsumi validator'da rad etiladi. Ichki jadvallarda unique indeks yo'q: ro'yxat almashtirilganda eski qatorlar o'chib, yangilari shu saqlashda yoziladi. Dastur nomi esa universitet ichida unique (`Program.NameTaken`, bazada ham indeks), chunki import dasturni universitet slug'i va nomi bilan topadi.
 - **jsonb o'qish.** `CatalogueModule` Dapper'ga `Dictionary<string, string>` va `Dictionary<Exam, decimal>` uchun JSON type handler qo'shadi. Dapper handler'lari butun jarayon uchun umumiy: boshqa modul shu turlarni Dapper bilan o'qisa, ular ham JSON deb o'qiladi.
+
+### CSV import
+
+Har bir jadval o'z faylida yuklanadi. Tartib: avval universitetlar, keyin dasturlar, so'ng qolganlari (ular universitet yoki dasturga slug va nom orqali bog'lanadi).
+
+| Endpoint | Majburiy ustunlar | Ixtiyoriy ustunlar | Kalit va nima bo'ladi |
+|---|---|---|---|
+| `/admin/universities/import` | `slug`, `name`, `country_code`, `source_url`, `checked_on` | `city`, `website`, `ranking`, `ranking_source`, `acceptance_rate`, `is_partner`, `description_<til>` | `slug`: bor bo'lsa yangilanadi, yo'q bo'lsa yaratiladi |
+| `/admin/programs/import` | `university_slug`, `name`, `degree_level`, `field`, `language`, `source_url`, `checked_on` | `duration_months` | `university_slug` + `name`: bor bo'lsa yangilanadi, yo'q bo'lsa yaratiladi |
+| `/admin/costs/import` | `university_slug`, `academic_year`, `tuition_minor`, `currency`, `source_url`, `checked_on` | `living_minor` | faylda bor har bir universitetning narxlari fayldagisi bilan almashtiriladi |
+| `/admin/scholarships/import` | `university_slug`, `name`, `kind`, `source_url`, `checked_on` | `amount_<til>`, `eligibility_<til>` | universitet grantlari almashtiriladi |
+| `/admin/requirements/import` | `university_slug`, `program_name`, `intake_term`, `intake_year`, `source_url`, `checked_on` | `ielts_min`, `toefl_min`, `duolingo_min`, `sat_policy`, `sat_mid_range_low`, `sat_mid_range_high`, `minimum_gpa`, `gpa_scale`, `documents`, `essays_count`, `interview_required` | dastur talablari almashtiriladi |
+| `/admin/deadlines/import` | `university_slug`, `program_name`, `round`, `due_date`, `source_url`, `checked_on` | — | dastur muddatlari almashtiriladi |
+
+- **Format.** CSV, UTF-8 (BOM bo'lsa ham bo'ladi), birinchi qator sarlavha. Ajratuvchi vergul yoki nuqtali vergul — avtomatik aniqlanadi (Excel ba'zi tillarda `;` bilan saqlaydi). Ichida vergul bor qiymat qo'shtirnoqqa olinadi. Fayl ko'pi bilan 5 MB va 5 000 qator.
+- **Qiymatlar.** Sana `YYYY-MM-DD`; sonlarda nuqta (`6.5`), vergul qabul qilinmaydi, shunda `6,5` jimgina `65` bo'lib qolmaydi; ha/yo'q `true`/`false`; enum'lar nomi bilan, katta-kichik harf farqi yo'q (`Bachelor`, `Fall`, `Required`, `NeedBased`); pul eng kichik birlikda (`tuition_minor`); `documents` nuqtali vergul bilan (`Transcript; CV`). Tarjima ustunlari `description_en`, `description_uz` ko'rinishida; yangi til uchun ustun qo'shish kifoya.
+- **Hammasi yoki hech narsa.** Avval butun fayl tekshiriladi: sarlavha (yo'q yoki noma'lum ustun), har bir qiymat, qo'lda kiritishdagi bilan bir xil validator qoidalari, fayl ichidagi takrorlar va bazada universitet/dastur borligi. Bitta xato bo'lsa ham hech narsa saqlanmaydi va `400` javobida hamma xatolar `rows[5].currency` yoki `columns.rank` ko'rinishida keladi. Qator raqami Excel'dagi qator raqami (sarlavha 1-qator). Xato bo'lmasa hamma o'zgarish bitta tranzaksiyada saqlanadi va javobda `rows`, `created`, `updated` (ichki ro'yxatlar uchun — ro'yxati almashtirilgan universitet yoki dasturlar soni) keladi.
+- **Nega validator handler ichida.** Boshqa buyruqlarda validator pipeline'da ishlaydi. Import buyrug'i esa faylni (`Stream`) olib keladi va qatorlar faqat fayl o'qilgandan keyin paydo bo'ladi, shuning uchun handler har bir qatorni o'sha validator'lar (`UniversityDetailsValidator`, `ReplaceUniversityCostsCommandValidator` va boshqalar) bilan tekshiradi. CSV'ni `ICsvReader` o'qiydi, uning CsvHelper'dagi amalga oshirilishi Infrastructure'da.
 
 ## Butun dunyodan foydalanuvchilar
 

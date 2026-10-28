@@ -8,7 +8,10 @@ using FourPrep.Modules.Catalogue.Domain.Deadlines;
 using FourPrep.Modules.Catalogue.Application.Abstractions.Data;
 using FourPrep.Modules.Catalogue.Application.Abstractions.Authentication;
 
-public sealed record DeadlineInput(string Round, DateOnly DueDate, string SourceUrl, DateOnly CheckedOn);
+public sealed record DeadlineInput(string Round, DateOnly DueDate, string SourceUrl, DateOnly CheckedOn)
+{
+    internal Deadline ToDeadline() => Deadline.Create(Round.Trim(), DueDate, SourceUrl.Trim(), CheckedOn);
+}
 
 public sealed record ReplaceProgramDeadlinesCommand(Guid ProgramId, IReadOnlyList<DeadlineInput> Deadlines) : ICommand;
 
@@ -27,11 +30,7 @@ internal sealed class ReplaceProgramDeadlinesCommandHandler(
         }
 
         program.ReplaceDeadlines(
-            request.Deadlines.Select(deadline => Deadline.Create(
-                deadline.Round.Trim(),
-                deadline.DueDate,
-                deadline.SourceUrl.Trim(),
-                deadline.CheckedOn)),
+            request.Deadlines.Select(deadline => deadline.ToDeadline()),
             currentUser.UserId,
             dateTimeProvider.UtcNow);
 

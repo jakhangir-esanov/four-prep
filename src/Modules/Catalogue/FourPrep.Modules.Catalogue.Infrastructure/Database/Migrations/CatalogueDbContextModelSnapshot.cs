@@ -129,8 +129,9 @@ namespace FourPrep.Modules.Catalogue.Infrastructure.Database.Migrations
                     b.HasIndex("Field")
                         .HasDatabaseName("ix_programs_field");
 
-                    b.HasIndex("UniversityId")
-                        .HasDatabaseName("ix_programs_university_id");
+                    b.HasIndex("UniversityId", "Name")
+                        .IsUnique()
+                        .HasDatabaseName("ix_programs_university_id_name");
 
                     b.ToTable("programs", "catalogue");
                 });
