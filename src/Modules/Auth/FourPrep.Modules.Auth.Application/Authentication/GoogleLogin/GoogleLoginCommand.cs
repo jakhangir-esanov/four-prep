@@ -41,12 +41,10 @@ internal sealed class GoogleLoginCommandHandler(
             return Result.Failure<AuthTokenResponse>(tokens.Error);
         }
 
-        byte[] bytes = System.Security.Cryptography.SHA256.HashData(
-            System.Text.Encoding.UTF8.GetBytes(tokens.Data.AccessToken));
-
         var session = UserSession.Create(
             tokens.Data.UserId,
-            Convert.ToHexString(bytes),
+            tokens.Data.SessionId,
+            AccessTokenHash.Of(tokens.Data.AccessToken),
             tokens.Data.ExpiresAt,
             dateTimeProvider.UtcNow);
 

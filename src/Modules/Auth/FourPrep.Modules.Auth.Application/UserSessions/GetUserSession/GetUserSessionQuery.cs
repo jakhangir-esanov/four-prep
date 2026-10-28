@@ -24,6 +24,7 @@ internal sealed class GetUserSessionQueryHandler(IDbConnectionFactory dbConnecti
                 expires_on_utc AS {nameof(UserSessionResponse.ExpiresOnUtc)},
                 is_revoked AS {nameof(UserSessionResponse.IsRevoked)},
                 created_on_utc AS {nameof(UserSessionResponse.CreatedOnUtc)},
+                refreshed_on_utc AS {nameof(UserSessionResponse.RefreshedOnUtc)},
                 revoked_on_utc AS {nameof(UserSessionResponse.RevokedOnUtc)}
             FROM
                 auth.user_sessions

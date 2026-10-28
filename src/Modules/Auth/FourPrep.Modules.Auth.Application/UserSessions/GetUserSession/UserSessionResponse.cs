@@ -7,4 +7,5 @@ public sealed record UserSessionResponse(
     DateTime ExpiresOnUtc,
     bool IsRevoked,
     DateTime CreatedOnUtc,
+    DateTime? RefreshedOnUtc,
     DateTime? RevokedOnUtc);

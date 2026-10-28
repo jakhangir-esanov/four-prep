@@ -26,12 +26,10 @@ internal sealed class LoginCommandHandler(
             return Result.Failure<AuthTokenResponse>(loginResult.Error);
         }
 
-        byte[] bytes = System.Security.Cryptography.SHA256.HashData(
-            System.Text.Encoding.UTF8.GetBytes(loginResult.Data.AccessToken));
-
         var session = UserSession.Create(
             loginResult.Data.UserId,
-            Convert.ToHexString(bytes),
+            loginResult.Data.SessionId,
+            AccessTokenHash.Of(loginResult.Data.AccessToken),
             loginResult.Data.ExpiresAt,
             dateTimeProvider.UtcNow);
 

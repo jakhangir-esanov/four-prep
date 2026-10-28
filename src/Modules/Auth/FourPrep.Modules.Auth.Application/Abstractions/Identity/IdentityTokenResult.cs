@@ -8,4 +8,5 @@ public sealed record IdentityTokenResult(
     int ExpiresIn,
     int RefreshExpiresIn,
     Guid UserId,
-    DateTime ExpiresAt);
+    DateTime ExpiresAt,
+    string? SessionId = null);

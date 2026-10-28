@@ -11,6 +11,7 @@ internal sealed class UserSessionConfiguration : IEntityTypeConfiguration<UserSe
         builder.HasKey(x => x.Id);
 
         builder.Property(x => x.UserId).IsRequired();
+        builder.Property(x => x.IdentitySessionId).HasMaxLength(64);
         builder.Property(x => x.AccessTokenHash)
             .HasMaxLength(512)
             .IsRequired();
@@ -18,6 +19,7 @@ internal sealed class UserSessionConfiguration : IEntityTypeConfiguration<UserSe
         builder.Property(x => x.CreatedOnUtc).IsRequired();
 
         builder.HasIndex(x => x.UserId);
+        builder.HasIndex(x => x.IdentitySessionId);
         builder.HasIndex(x => x.AccessTokenHash);
         builder.HasIndex(x => x.ExpiresOnUtc);
     }

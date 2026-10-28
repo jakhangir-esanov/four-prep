@@ -61,6 +61,7 @@ internal sealed partial class KeycloakAdminClient(
     private const string TokenTypeField = "token_type";
     private const string ExpiresInField = "expires_in";
     private const string RefreshExpiresInField = "refresh_expires_in";
+    private const string SessionIdClaim = "sid";
 
     private const string PasswordCredentialType = "password";
     private const string PhoneNumberAttribute = "phone_number";
@@ -548,7 +549,8 @@ internal sealed partial class KeycloakAdminClient(
             json[ExpiresInField]?.Value<int>() ?? 0,
             json[RefreshExpiresInField]?.Value<int>() ?? 0,
             userId,
-            jwt.ValidTo);
+            jwt.ValidTo,
+            jwt.Claims.FirstOrDefault(claim => claim.Type == SessionIdClaim)?.Value);
     }
 
     private async Task<Result<IdentityTokenResult>> MapTokenFailureAsync(

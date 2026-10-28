@@ -44,9 +44,18 @@ namespace FourPrep.Modules.Auth.Infrastructure.Database.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("expires_on_utc");
 
+                    b.Property<string>("IdentitySessionId")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("identity_session_id");
+
                     b.Property<bool>("IsRevoked")
                         .HasColumnType("boolean")
                         .HasColumnName("is_revoked");
+
+                    b.Property<DateTimeOffset?>("RefreshedOnUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("refreshed_on_utc");
 
                     b.Property<DateTimeOffset?>("RevokedOnUtc")
                         .HasColumnType("timestamp with time zone")
@@ -64,6 +73,9 @@ namespace FourPrep.Modules.Auth.Infrastructure.Database.Migrations
 
                     b.HasIndex("ExpiresOnUtc")
                         .HasDatabaseName("ix_user_sessions_expires_on_utc");
+
+                    b.HasIndex("IdentitySessionId")
+                        .HasDatabaseName("ix_user_sessions_identity_session_id");
 
                     b.HasIndex("UserId")
                         .HasDatabaseName("ix_user_sessions_user_id");

@@ -47,11 +47,21 @@ internal sealed class FakeUserSessionRepository : IUserSessionRepository
     public Task<UserSession?> GetAsync(Guid id, CancellationToken cancellationToken = default) =>
         throw new NotSupportedException();
 
+    public Task<UserSession?> GetByIdentitySessionIdAsync(
+        string identitySessionId, CancellationToken cancellationToken = default) =>
+        Task.FromResult(Inserted.LastOrDefault(session => session.IdentitySessionId == identitySessionId));
+
     public void Insert(UserSession userSession) => Inserted.Add(userSession);
 
     public Task RevokeAllByUserIdAsync(Guid userId, DateTime revokedOnUtc, CancellationToken cancellationToken = default)
     {
         RevokedUserIds.Add(userId);
+
+        foreach (var session in Inserted.Where(session => session.UserId == userId && !session.IsRevoked))
+        {
+            session.Revoke(revokedOnUtc);
+        }
+
         return Task.CompletedTask;
     }
 }
@@ -97,6 +107,8 @@ internal sealed class FakeIdentityProviderClient : IIdentityProviderClient
 
     public Error? AssignRoleFailure { get; init; }
 
+    public Error? LogoutSessionsFailure { get; init; }
+
     public Result<IdentityTokenResult> LoginResult { get; set; } =
         Result.Failure<IdentityTokenResult>(AuthenticationErrors.InvalidCredentials);
 
@@ -126,6 +138,11 @@ internal sealed class FakeIdentityProviderClient : IIdentityProviderClient
 
     public Task<Result> LogoutUserSessionsAsync(Guid userId, CancellationToken cancellationToken = default)
     {
+        if (LogoutSessionsFailure is not null)
+        {
+            return Task.FromResult(Result.Failure(LogoutSessionsFailure));
+        }
+
         LoggedOutUserIds.Add(userId);
         return Task.FromResult(Result.Success());
     }

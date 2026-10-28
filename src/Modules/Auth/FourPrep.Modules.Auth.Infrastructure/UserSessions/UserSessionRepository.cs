@@ -11,6 +11,16 @@ internal sealed class UserSessionRepository(AuthDbContext dbContext) : IUserSess
         return await dbContext.UserSessions.SingleOrDefaultAsync(x => x.Id == id, cancellationToken);
     }
 
+    public async Task<UserSession?> GetByIdentitySessionIdAsync(
+        string identitySessionId,
+        CancellationToken cancellationToken = default)
+    {
+        return await dbContext.UserSessions
+            .Where(x => x.IdentitySessionId == identitySessionId)
+            .OrderByDescending(x => x.CreatedOnUtc)
+            .FirstOrDefaultAsync(cancellationToken);
+    }
+
     public void Insert(UserSession userSession)
     {
         dbContext.UserSessions.Add(userSession);

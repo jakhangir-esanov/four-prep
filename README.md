@@ -44,6 +44,7 @@ Bu qiymatlarni prod'da ishlatmang.
 - **User Profile.** Keycloak 26 standart holatda `firstName` va `lastName` ni majburiy qiladi. Ism-familiyasiz yaratilgan foydalanuvchi login paytida `Account is not fully set up` xatosini oladi. Realm faylida bu ikki maydon ixtiyoriy qilingan.
 - **Atributlar.** `phone_number`, `country` va `zoneinfo` User Profile'da e'lon qilingan. E'lon qilinmagan atributni Keycloak hech qanday xatosiz tashlab yuboradi. `locale` alohida e'lon qilinmaydi: realm'da tillar yoqilgani uchun Keycloak uni o'zi boshqaradi.
 - **Rollar.** `POST /auth/register` orqali ro'yxatdan o'tgan foydalanuvchi `student` rolini oladi, `POST /auth/register-parent` orqali o'tgan esa `parent` rolini. Xodimlarni `super_admin` `POST /admin/users` orqali kerakli rol bilan yaratadi.
+- **Sessiyalar.** Har bir login (parol, Google yoki ro'yxatdan o'tish) `auth.user_sessions` da bitta yozuv ochadi va unga Keycloak sessiyasining `sid` i yoziladi. `POST /auth/refresh` yangi qator qo'shmaydi: shu `sid` li yozuvda access token hash'i, muddati va `refreshed_on_utc` yangilanadi. Bekor qilingan (revoked) sessiyani refresh qilib bo'lmaydi. `POST /auth/logout-all` avval Keycloak'dagi barcha sessiyalarni yopadi, keyin yozuvlarni bekor qiladi, shuning uchun hamma qurilmadagi refresh token'lar ishlamay qoladi. Allaqachon berilgan access token esa muddati tugaguncha (30 daqiqa) amal qiladi: API har so'rovda sessiya yozuvini tekshirmaydi.
 
 ## O'quvchi, ota-ona va mentor
 
