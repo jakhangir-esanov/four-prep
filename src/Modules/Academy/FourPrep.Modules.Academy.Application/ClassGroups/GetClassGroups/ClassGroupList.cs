@@ -4,6 +4,7 @@ using Dapper;
 using System.Data.Common;
 using FourPrep.Common.Application.Paging;
 using FourPrep.Modules.Academy.Domain.ClassGroups;
+using FourPrep.Modules.Academy.Domain.Enrolments;
 
 internal static class ClassGroupList
 {
@@ -24,6 +25,10 @@ internal static class ClassGroupList
             g.starts_on,
             g.weeks,
             g.capacity,
+            g.capacity - (
+                SELECT COUNT(*)::int
+                FROM academy.enrolments e
+                WHERE e.class_group_id = g.id AND e.status IN (@PendingPayment, @Active)) AS seats_left,
             g.status,
             g.teacher_user_id,
             g.teacher_name,
@@ -49,6 +54,7 @@ internal static class ClassGroupList
             starts_on AS {nameof(ClassGroupResponse.StartsOn)},
             weeks AS {nameof(ClassGroupResponse.Weeks)},
             capacity AS {nameof(ClassGroupResponse.Capacity)},
+            seats_left AS {nameof(ClassGroupResponse.SeatsLeft)},
             status AS {nameof(ClassGroupResponse.Status)},
             teacher_user_id AS {nameof(ClassGroupResponse.TeacherUserId)},
             teacher_name AS {nameof(ClassGroupResponse.TeacherName)},
@@ -101,6 +107,8 @@ internal static class ClassGroupList
             Status = (int?)filter.Status,
             filter.TeacherUserId,
             Search = filter.SearchPattern,
+            PendingPayment = (int)EnrolmentStatus.PendingPayment,
+            Active = (int)EnrolmentStatus.Active,
             Offset = paging.First,
             PageSize = paging.Rows
         };
@@ -128,8 +136,16 @@ internal static class ClassGroupList
             {SelectSql}
             """;
 
+        var param = new
+        {
+            Id = id,
+            Status = (int)status,
+            PendingPayment = (int)EnrolmentStatus.PendingPayment,
+            Active = (int)EnrolmentStatus.Active
+        };
+
         var group = await connection.QuerySingleOrDefaultAsync<ClassGroupResponse>(
-            new CommandDefinition(sql, new { Id = id, Status = (int)status }, cancellationToken: cancellationToken));
+            new CommandDefinition(sql, param, cancellationToken: cancellationToken));
 
         if (group is null)
         {

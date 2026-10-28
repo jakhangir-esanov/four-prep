@@ -63,4 +63,16 @@ public static class ClassGroupErrors
         en: "The group has no teacher assigned.",
         uz: "Guruhga o'qituvchi biriktirilmagan.",
         ru: "Группе не назначен преподаватель.");
+
+    public static readonly Error NotOpen = Error.Conflict(
+        "ClassGroup.NotOpen",
+        en: "This group is not taking enrolments.",
+        uz: "Bu guruhga hozir yozilib bo'lmaydi.",
+        ru: "В эту группу сейчас не записывают.");
+
+    public static readonly Error CapacityBelowSeatsTaken = Error.Conflict(
+        "ClassGroup.CapacityBelowSeatsTaken",
+        en: "The group already has more students holding a seat than the new number of seats.",
+        uz: "Guruhda o'rin egallagan o'quvchilar yangi o'rinlar sonidan ko'p.",
+        ru: "В группе уже больше учеников с местом, чем новое число мест.");
 }

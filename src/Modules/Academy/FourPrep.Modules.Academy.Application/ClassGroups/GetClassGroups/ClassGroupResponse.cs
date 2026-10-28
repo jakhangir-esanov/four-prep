@@ -18,6 +18,7 @@ public sealed record ClassGroupResponse
     public DateOnly StartsOn { get; init; }
     public int Weeks { get; init; }
     public int Capacity { get; init; }
+    public int SeatsLeft { get; init; }
     public ClassGroupStatus Status { get; init; }
     public Guid? TeacherUserId { get; init; }
     public string? TeacherName { get; init; }

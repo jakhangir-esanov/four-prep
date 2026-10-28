@@ -82,7 +82,7 @@ Modules in `src/Modules/`:
 | Student | profiles, parent links, mentors; later the student's stage and path, test scores, personal documents and offboarding | implemented (profiles, parent links, mentors) |
 | Catalogue | universities, programs, admission requirements, costs, deadlines, scholarships, destination countries; every fact carries its source | implemented (manual entry, CSV import, public search) |
 | Content | news, results, partners, About, public staff profiles | skeleton |
-| Academy | courses, class groups, enrolments, attendance, mock scores, placement tests | implemented (courses, class groups, public course pages); no enrolment yet |
+| Academy | courses, class groups, enrolments, attendance, mock scores, placement tests | implemented (courses, class groups, public course pages, enrolment and waitlist with manual activation) |
 | Admission | academy application, university applications, portal accounts, essays, recommendations, university offers, visa | skeleton |
 | Agreement | products, offers and discounts, agreements, signatures | skeleton |
 | Payment | invoices, payments, the payment provider's webhook | skeleton |
@@ -123,6 +123,8 @@ Existing examples:
   (`IStudentService` → `CreateStudentCommand`)
 - `FourPrep.Modules.Student.Auth` — Student checks that a user has the `mentor` role
   (`IAuthService` → `GetUserRolesQuery`)
+- `FourPrep.Modules.Academy.Student` — Academy checks that the caller is the student or a linked parent
+  (`IStudentService` → `HasFamilyAccessQuery`)
 
 Never query another module's schema with SQL, and never share entities between modules.
 

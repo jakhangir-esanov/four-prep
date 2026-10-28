@@ -2,6 +2,7 @@ namespace FourPrep.Modules.Academy.Infrastructure;
 
 using Microsoft.EntityFrameworkCore;
 using FourPrep.Modules.Academy.Auth;
+using FourPrep.Modules.Academy.Student;
 using Microsoft.Extensions.Configuration;
 using FourPrep.Common.Presentation.Endpoints;
 using Microsoft.EntityFrameworkCore.Migrations;
@@ -9,8 +10,10 @@ using Microsoft.Extensions.DependencyInjection;
 using FourPrep.Modules.Academy.Domain.Courses;
 using FourPrep.Modules.Academy.Domain.ClassGroups;
 using FourPrep.Modules.Academy.Infrastructure.Courses;
+using FourPrep.Modules.Academy.Infrastructure.Jobs;
 using FourPrep.Modules.Academy.Infrastructure.Database;
 using FourPrep.Modules.Academy.Application.Abstractions.Auth;
+using FourPrep.Modules.Academy.Application.Abstractions.Students;
 using FourPrep.Modules.Academy.Infrastructure.ClassGroups;
 using FourPrep.Modules.Academy.Application.Abstractions.Data;
 using FourPrep.Modules.Academy.Infrastructure.Authentication;
@@ -44,5 +47,9 @@ public static class AcademyModule
         services.AddScoped<ICourseRepository, CourseRepository>();
         services.AddScoped<IClassGroupRepository, ClassGroupRepository>();
         services.AddScoped<IAuthService, AuthService>();
+        services.AddScoped<IStudentService, StudentService>();
+
+        services.AddScoped<ExpireUnpaidEnrolmentsJob>();
+        services.AddHostedService<RecurringJobsRegistration>();
     }
 }

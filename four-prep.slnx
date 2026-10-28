@@ -23,6 +23,7 @@
     <Project Path="src/Modules/Academy/FourPrep.Modules.Academy.Domain/FourPrep.Modules.Academy.Domain.csproj" />
     <Project Path="src/Modules/Academy/FourPrep.Modules.Academy.Infrastructure/FourPrep.Modules.Academy.Infrastructure.csproj" />
     <Project Path="src/Modules/Academy/FourPrep.Modules.Academy.Presentation/FourPrep.Modules.Academy.Presentation.csproj" />
+    <Project Path="src/Modules/Academy/FourPrep.Modules.Academy.Student/FourPrep.Modules.Academy.Student.csproj" />
   </Folder>
   <Folder Name="/src/Modules/Academy/test/">
     <Project Path="src/Modules/Academy/test/FourPrep.Modules.Academy.ArchitectureTests/FourPrep.Modules.Academy.ArchitectureTests.csproj" />

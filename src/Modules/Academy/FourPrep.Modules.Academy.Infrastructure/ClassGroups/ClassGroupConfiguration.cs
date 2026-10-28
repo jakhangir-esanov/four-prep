@@ -4,12 +4,14 @@ using Microsoft.EntityFrameworkCore;
 using FourPrep.Common.Infrastructure.Data;
 using FourPrep.Modules.Academy.Domain.Courses;
 using FourPrep.Modules.Academy.Domain.ClassGroups;
+using FourPrep.Modules.Academy.Domain.Enrolments;
 using FourPrep.Modules.Academy.Domain.ScheduleSlots;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 internal sealed class ClassGroupConfiguration : IEntityTypeConfiguration<ClassGroup>
 {
     private const string ClassGroupForeignKey = "ClassGroupId";
+    private const string VersionProperty = "Version";
 
     public void Configure(EntityTypeBuilder<ClassGroup> builder)
     {
@@ -38,7 +40,21 @@ internal sealed class ClassGroupConfiguration : IEntityTypeConfiguration<ClassGr
             slot.Ignore(x => x.EndTime);
         });
 
+        builder.OwnsMany(x => x.Enrolments, enrolment =>
+        {
+            enrolment.ToTable("enrolments");
+            enrolment.WithOwner().HasForeignKey(ClassGroupForeignKey);
+            enrolment.HasKey(x => x.Id);
+            enrolment.Property(x => x.Id).ValueGeneratedNever();
+            enrolment.HasIndex(x => x.StudentUserId);
+            enrolment.HasIndex(ClassGroupForeignKey, nameof(Enrolment.Status));
+            enrolment.HasIndex(x => new { x.Status, x.PaymentDueOnUtc });
+        });
+
         builder.Navigation(x => x.Schedule).UsePropertyAccessMode(PropertyAccessMode.Field);
+        builder.Navigation(x => x.Enrolments).UsePropertyAccessMode(PropertyAccessMode.Field);
+
+        builder.Property<uint>(VersionProperty).IsRowVersion();
 
         builder.HasIndex(x => x.Code).IsUnique();
         builder.HasIndex(x => new { x.Status, x.StartsOn });

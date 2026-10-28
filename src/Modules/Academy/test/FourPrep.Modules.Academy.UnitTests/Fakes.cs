@@ -2,12 +2,16 @@ namespace FourPrep.Modules.Academy.UnitTests;
 
 using System.Data.Common;
 using FourPrep.Common.Domain;
+using FourPrep.Common.Application.Data;
 using FourPrep.Common.Application.Clock;
 using FourPrep.Modules.Academy.Domain.Courses;
 using FourPrep.Modules.Academy.Domain.ClassGroups;
+using FourPrep.Modules.Academy.Domain.Enrolments;
 using FourPrep.Modules.Academy.Application.ClassGroups;
 using FourPrep.Modules.Academy.Application.Abstractions.Auth;
 using FourPrep.Modules.Academy.Application.Abstractions.Data;
+using FourPrep.Modules.Academy.Application.Abstractions.Students;
+using FourPrep.Modules.Academy.Application.Abstractions.Authentication;
 
 internal sealed class FakeClock : IDateTimeProvider
 {
@@ -73,6 +77,27 @@ internal sealed class FakeClassGroupRepository : IClassGroupRepository
     public Task<ClassGroup?> GetAsync(Guid id, CancellationToken cancellationToken = default) =>
         Task.FromResult(ClassGroups.SingleOrDefault(x => x.Id == id));
 
+    public ClassGroup AddOpen(int capacity)
+    {
+        var classGroup = Add(Guid.NewGuid(), $"GROUP-{ClassGroups.Count + 1}");
+        classGroup.Capacity = capacity;
+        classGroup.Status = ClassGroupStatus.Open;
+        return classGroup;
+    }
+
+    public Task<ClassGroup?> GetByEnrolmentIdAsync(Guid enrolmentId, CancellationToken cancellationToken = default) =>
+        Task.FromResult(ClassGroups.SingleOrDefault(x => x.Enrolments.Any(enrolment => enrolment.Id == enrolmentId)));
+
+    public Task<IReadOnlyList<ClassGroup>> GetWithPaymentsDueAsync(DateTime utcNow, CancellationToken cancellationToken = default) =>
+        Task.FromResult<IReadOnlyList<ClassGroup>>(
+            [.. ClassGroups.Where(x => x.Enrolments.Any(enrolment => enrolment.PaymentDueOnUtc <= utcNow))]);
+
+    public Task<int> CountUnpaidEnrolmentsAsync(Guid studentUserId, CancellationToken cancellationToken = default) =>
+        Task.FromResult(ClassGroups
+            .SelectMany(x => x.Enrolments)
+            .Count(enrolment => enrolment.StudentUserId == studentUserId &&
+                                enrolment.Status is EnrolmentStatus.Waitlisted or EnrolmentStatus.PendingPayment));
+
     public Task<bool> IsCodeTakenAsync(string code, Guid? exceptClassGroupId, CancellationToken cancellationToken = default) =>
         Task.FromResult(ClassGroups.Any(x => x.Code == code && x.Id != exceptClassGroupId));
 
@@ -99,6 +124,29 @@ internal sealed class FakeAuthService : IAuthService
 
         return Task.FromResult(Result.Success(Roles.TryGetValue(userId, out var roles) ? roles : []));
     }
+}
+
+internal sealed class FakeCurrentUser(Guid userId) : ICurrentUser
+{
+    public Guid UserId { get; } = userId;
+}
+
+internal sealed class FakeStudentService : IStudentService
+{
+    public HashSet<(Guid UserId, Guid StudentUserId)> Access { get; } = [];
+
+    public Error? Failure { get; init; }
+
+    public Task<Result<bool>> HasFamilyAccessAsync(Guid userId, Guid studentUserId, CancellationToken cancellationToken = default) =>
+        Task.FromResult(Failure is null
+            ? Result.Success(Access.Contains((userId, studentUserId)))
+            : Result.Failure<bool>(Failure));
+}
+
+internal sealed class UnusedConnectionFactory : IDbConnectionFactory
+{
+    public ValueTask<DbConnection> OpenConnectionAsync() =>
+        throw new InvalidOperationException("The handler should not reach the database.");
 }
 
 internal static class ClassGroupDetailsSamples

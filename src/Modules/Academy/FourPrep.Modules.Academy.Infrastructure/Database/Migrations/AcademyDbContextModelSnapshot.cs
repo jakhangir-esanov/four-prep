@@ -99,6 +99,12 @@ namespace FourPrep.Modules.Academy.Infrastructure.Database.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("updated_on_utc");
 
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
                     b.Property<int>("Weeks")
                         .HasColumnType("integer")
                         .HasColumnName("weeks");
@@ -172,6 +178,63 @@ namespace FourPrep.Modules.Academy.Infrastructure.Database.Migrations
                         .IsRequired()
                         .HasConstraintName("fk_class_groups_courses_course_id");
 
+                    b.OwnsMany("FourPrep.Modules.Academy.Domain.Enrolments.Enrolment", "Enrolments", b1 =>
+                        {
+                            b1.Property<Guid>("Id")
+                                .HasColumnType("uuid")
+                                .HasColumnName("id");
+
+                            b1.Property<Guid>("ClassGroupId")
+                                .HasColumnType("uuid")
+                                .HasColumnName("class_group_id");
+
+                            b1.Property<DateTimeOffset>("CreatedOnUtc")
+                                .HasColumnType("timestamp with time zone")
+                                .HasColumnName("created_on_utc");
+
+                            b1.Property<int?>("DropReason")
+                                .HasColumnType("integer")
+                                .HasColumnName("drop_reason");
+
+                            b1.Property<Guid>("EnrolledByUserId")
+                                .HasColumnType("uuid")
+                                .HasColumnName("enrolled_by_user_id");
+
+                            b1.Property<DateTimeOffset?>("PaymentDueOnUtc")
+                                .HasColumnType("timestamp with time zone")
+                                .HasColumnName("payment_due_on_utc");
+
+                            b1.Property<int>("Status")
+                                .HasColumnType("integer")
+                                .HasColumnName("status");
+
+                            b1.Property<Guid>("StudentUserId")
+                                .HasColumnType("uuid")
+                                .HasColumnName("student_user_id");
+
+                            b1.Property<DateTimeOffset>("UpdatedOnUtc")
+                                .HasColumnType("timestamp with time zone")
+                                .HasColumnName("updated_on_utc");
+
+                            b1.HasKey("Id")
+                                .HasName("pk_enrolments");
+
+                            b1.HasIndex("StudentUserId")
+                                .HasDatabaseName("ix_enrolments_student_user_id");
+
+                            b1.HasIndex("ClassGroupId", "Status")
+                                .HasDatabaseName("ix_enrolments_class_group_id_status");
+
+                            b1.HasIndex("Status", "PaymentDueOnUtc")
+                                .HasDatabaseName("ix_enrolments_status_payment_due_on_utc");
+
+                            b1.ToTable("enrolments", "academy");
+
+                            b1.WithOwner()
+                                .HasForeignKey("ClassGroupId")
+                                .HasConstraintName("fk_enrolments_class_groups_class_group_id");
+                        });
+
                     b.OwnsMany("FourPrep.Modules.Academy.Domain.ScheduleSlots.ScheduleSlot", "Schedule", b1 =>
                         {
                             b1.Property<Guid>("ClassGroupId")
@@ -199,6 +262,8 @@ namespace FourPrep.Modules.Academy.Infrastructure.Database.Migrations
                                 .HasForeignKey("ClassGroupId")
                                 .HasConstraintName("fk_schedule_slots_class_groups_class_group_id");
                         });
+
+                    b.Navigation("Enrolments");
 
                     b.Navigation("Schedule");
                 });

@@ -1,6 +1,7 @@
 namespace FourPrep.Modules.Academy.Domain.ClassGroups;
 
 using FourPrep.Common.Domain;
+using FourPrep.Modules.Academy.Domain.Enrolments;
 using FourPrep.Modules.Academy.Domain.ScheduleSlots;
 
 public sealed class ClassGroup
@@ -14,6 +15,7 @@ public sealed class ClassGroup
     };
 
     private readonly List<ScheduleSlot> _schedule = [];
+    private readonly List<Enrolment> _enrolments = [];
 
     public Guid Id { get; set; }
     public Guid CourseId { get; set; }
@@ -31,10 +33,13 @@ public sealed class ClassGroup
     public Guid? TeacherUserId { get; set; }
     public string? TeacherName { get; set; }
     public IReadOnlyCollection<ScheduleSlot> Schedule => _schedule;
+    public IReadOnlyCollection<Enrolment> Enrolments => _enrolments;
     public DateTimeOffset CreatedOnUtc { get; set; }
     public DateTimeOffset UpdatedOnUtc { get; set; }
 
     public bool IsCancelled => Status == ClassGroupStatus.Cancelled;
+
+    public int SeatsTaken => _enrolments.Count(enrolment => enrolment.HoldsSeat);
 
     public static ClassGroup Create(
         Guid courseId,
@@ -103,6 +108,7 @@ public sealed class ClassGroup
         _schedule.Clear();
         _schedule.AddRange(schedule);
         UpdatedOnUtc = utcNow;
+        FillFreeSeats(utcNow);
     }
 
     public Result ChangeStatus(ClassGroupStatus status, DateTime utcNow)
@@ -114,6 +120,11 @@ public sealed class ClassGroup
 
         Status = status;
         UpdatedOnUtc = utcNow;
+
+        if (IsCancelled)
+        {
+            EndCurrentEnrolments(utcNow);
+        }
 
         return Result.Success();
     }
@@ -131,4 +142,100 @@ public sealed class ClassGroup
         TeacherName = null;
         UpdatedOnUtc = utcNow;
     }
+
+    public Result<Enrolment> Enrol(Guid studentUserId, Guid enrolledByUserId, DateTime utcNow)
+    {
+        if (Status != ClassGroupStatus.Open)
+        {
+            return Result.Failure<Enrolment>(ClassGroupErrors.NotOpen);
+        }
+
+        if (_enrolments.Any(enrolment => enrolment.StudentUserId == studentUserId && enrolment.IsCurrent))
+        {
+            return Result.Failure<Enrolment>(EnrolmentErrors.AlreadyEnrolled);
+        }
+
+        var seatAvailable = SeatsTaken < Capacity && !Waitlist().Any();
+        var enrolment = Enrolment.Create(studentUserId, enrolledByUserId, seatAvailable, utcNow);
+
+        _enrolments.Add(enrolment);
+        UpdatedOnUtc = utcNow;
+
+        return enrolment;
+    }
+
+    public Result CancelEnrolment(Guid enrolmentId, DateTime utcNow) =>
+        ChangeEnrolment(enrolmentId, enrolment => enrolment.Cancel(utcNow), utcNow);
+
+    public Result RemoveEnrolment(Guid enrolmentId, DateTime utcNow) =>
+        ChangeEnrolment(enrolmentId, enrolment => enrolment.Remove(utcNow), utcNow);
+
+    public Result ActivateEnrolment(Guid enrolmentId, DateTime utcNow) =>
+        ChangeEnrolment(enrolmentId, enrolment => enrolment.Activate(utcNow), utcNow);
+
+    public int ExpireUnpaidEnrolments(DateTime utcNow)
+    {
+        var overdue = _enrolments.Where(enrolment => enrolment.IsPaymentOverdue(utcNow)).ToList();
+        if (overdue.Count == 0)
+        {
+            return 0;
+        }
+
+        foreach (var enrolment in overdue)
+        {
+            enrolment.Expire(utcNow);
+        }
+
+        UpdatedOnUtc = utcNow;
+        FillFreeSeats(utcNow);
+
+        return overdue.Count;
+    }
+
+    private Result ChangeEnrolment(Guid enrolmentId, Func<Enrolment, Result> change, DateTime utcNow)
+    {
+        var enrolment = _enrolments.SingleOrDefault(x => x.Id == enrolmentId);
+        if (enrolment is null)
+        {
+            return Result.Failure(EnrolmentErrors.NotFound);
+        }
+
+        var changed = change(enrolment);
+        if (changed.IsFailure)
+        {
+            return changed;
+        }
+
+        UpdatedOnUtc = utcNow;
+        FillFreeSeats(utcNow);
+
+        return Result.Success();
+    }
+
+    private void EndCurrentEnrolments(DateTime utcNow)
+    {
+        foreach (var enrolment in _enrolments.Where(enrolment => enrolment.IsCurrent))
+        {
+            enrolment.EndWithGroup(utcNow);
+        }
+    }
+
+    private void FillFreeSeats(DateTime utcNow)
+    {
+        if (IsCancelled)
+        {
+            return;
+        }
+
+        foreach (var next in Waitlist().Take(Math.Max(0, Capacity - SeatsTaken)).ToList())
+        {
+            next.OfferSeat(utcNow);
+        }
+    }
+
+    private IEnumerable<Enrolment> Waitlist() =>
+        _enrolments
+            .Where(enrolment => enrolment.Status == EnrolmentStatus.Waitlisted)
+            .OrderBy(enrolment => enrolment.CreatedOnUtc)
+            .ThenBy(enrolment => enrolment.Id);
 }

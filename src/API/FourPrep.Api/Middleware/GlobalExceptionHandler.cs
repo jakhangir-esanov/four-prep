@@ -3,6 +3,7 @@ namespace FourPrep.Api.Middleware;
 using Npgsql;
 using FourPrep.Common.Domain;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Diagnostics;
 using FourPrep.Common.Presentation.Results;
 
@@ -18,7 +19,7 @@ internal sealed class GlobalExceptionHandler(ILogger<GlobalExceptionHandler> log
     {
         logger.LogError(exception, "Unhandled exception occurred");
 
-        var problemDetails = IsUniqueViolation(exception)
+        var problemDetails = IsConcurrentWrite(exception)
             ? new ProblemDetails
             {
                 Status = StatusCodes.Status409Conflict,
@@ -40,11 +41,12 @@ internal sealed class GlobalExceptionHandler(ILogger<GlobalExceptionHandler> log
         return true;
     }
 
-    private static bool IsUniqueViolation(Exception exception)
+    private static bool IsConcurrentWrite(Exception exception)
     {
         for (var current = exception; current is not null; current = current.InnerException)
         {
-            if (current is PostgresException postgresException && postgresException.SqlState == UniqueViolation)
+            if (current is DbUpdateConcurrencyException ||
+                current is PostgresException { SqlState: UniqueViolation })
             {
                 return true;
             }

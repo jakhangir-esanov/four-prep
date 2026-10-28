@@ -26,6 +26,11 @@ internal sealed class UpdateClassGroupCommandHandler(
             return Result.Failure(ClassGroupErrors.Cancelled);
         }
 
+        if (request.Details.Capacity < classGroup.SeatsTaken)
+        {
+            return Result.Failure(ClassGroupErrors.CapacityBelowSeatsTaken);
+        }
+
         if (await repository.IsCodeTakenAsync(request.Details.NormalizedCode, classGroup.Id, cancellationToken))
         {
             return Result.Failure(ClassGroupErrors.CodeTaken);

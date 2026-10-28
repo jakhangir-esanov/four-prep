@@ -49,7 +49,7 @@ Har bir modul o'z PostgreSQL sxemasiga ega va boshqa modulga faqat adapter orqal
 | Student | o'quvchi profili, ota-ona bog'lanishi, mentor; keyinroq o'quvchining bosqichi (stage) va yo'li, test ballari, shaxsiy hujjatlari va offboarding | profil, ota-ona va mentor tayyor |
 | Catalogue | universitetlar, dasturlar, qabul talablari, narxlar, muddatlar, grantlar, yo'nalish davlatlari | tayyor: qo'lda kiritish, CSV import, ochiq qidiruv |
 | Content | yangiliklar, natijalar (results), hamkorlar, About, xodimlarning ochiq profillari | skeleton |
-| Academy | kurslar, guruhlar, yozilish, davomat, mock ballar, placement test | kurslar va guruhlar tayyor (yozilishsiz) |
+| Academy | kurslar, guruhlar, yozilish, davomat, mock ballar, placement test | kurslar, guruhlar, yozilish va navbat tayyor (to'lovsiz) |
 | Admission | academy arizasi, universitetlarga arizalar, portal akkauntlari, essay, tavsiyanomalar, universitet offerlari, viza | skeleton |
 | Agreement | mahsulotlar, offer va chegirmalar, shartnomalar, imzolar | skeleton |
 | Payment | invoice, to'lovlar, to'lov tizimining webhook'i | skeleton |
@@ -147,14 +147,14 @@ Har bir jadval o'z faylida yuklanadi. Tartib: avval universitetlar, keyin dastur
 
 ## Kurslar va guruhlar (Academy)
 
-Academy 4Prep o'qitadigan kurslarni (Foundation Math, General English, SAT, IELTS va keyin qo'shiladiganlar) va ularning guruhlarini saqlaydi. Ommaviy `/courses` sahifasi shu ma'lumotdan quriladi. Yozilish (enrolment), davomat, mock ballar va placement test keyingi bosqichda qo'shiladi.
+Academy 4Prep o'qitadigan kurslarni (Foundation Math, General English, SAT, IELTS va keyin qo'shiladiganlar), ularning guruhlarini va guruhlarga yozilishni saqlaydi. Ommaviy `/courses` sahifasi shu ma'lumotdan quriladi. Davomat, mock ballar va placement test keyingi bosqichda qo'shiladi.
 
 **Tuzilishi.**
 
 | Aggregate | Ichidagilar | Nima |
 |---|---|---|
 | `Course` | — | kurs: manzil nomi (`slug`, masalan `sat`), uch tilda nomi va tavsifi |
-| `ClassGroup` | `ScheduleSlot` | kursning bitta guruhi: kodi, online yoki ofisda, boshlanish sanasi, necha hafta, o'rinlar soni, o'qituvchi, holati; haftalik dars jadvali |
+| `ClassGroup` | `ScheduleSlot`, `Enrolment` | kursning bitta guruhi: kodi, online yoki ofisda, boshlanish sanasi, necha hafta, o'rinlar soni, o'qituvchi, holati; haftalik dars jadvali; yozilishlar va navbat |
 
 **Endpoint'lar.**
 
@@ -177,9 +177,36 @@ Academy 4Prep o'qitadigan kurslarni (Foundation Math, General English, SAT, IELT
 - **Jadval va vaqt zonasi.** Haftalik jadvalda har bir dars kun (`0` yakshanba ... `6` shanba), boshlanish vaqti (`"18:00:00"`) va davomiylik (15–240 daqiqa, o'sha kuni tugaydi) bilan saqlanadi. Darslar ustma-ust tushmaydi, haftasiga ko'pi bilan 14 ta. Vaqt guruhning o'z IANA vaqt zonasida (`timeZone`, masalan `Asia/Tashkent` yoki `America/New_York`) yoziladi, frontend uni foydalanuvchi zonasiga o'girib ko'rsatadi. Shunda yozgi vaqtga o'tilganda dars soati guruh shahrida siljimaydi.
 - **Ofis kodga yozilmagan.** Ofisdagi guruhda davlat (ISO kodi), shahar va manzil majburiy; spec'dagi "Toshkent ofisi" oddiy ma'lumot sifatida kiritiladi. Online guruhda manzil saqlanmaydi.
 - **O'qituvchi.** Faqat `teacher` rolidagi foydalanuvchi biriktiriladi: rol `FourPrep.Modules.Academy.Auth` adapteri orqali tekshiriladi (`ClassGroup.NotATeacher`). Auth hisoblarida ism-familiya yo'q, shuning uchun kartada ko'rinadigan ismni (`teacherName`) admin biriktirish paytida yozadi. Content'da xodimlarning ochiq profillari paydo bo'lgach, ism o'sha yerdan olinadi. Xodim hisobi o'chirilsa, guruhda uning id'si va ismi qolib ketadi; buni event mexanizmi qo'shilganda tozalaymiz.
-- **Narx hozircha yo'q.** Spec guruhga narx qo'yadi, lekin narx va to'lov shartnoma (Agreement) bilan birga qilinadi. Bo'sh o'rinlar soni ham yozilish qo'shilganda chiqadi, hozir faqat `capacity` bor.
+- **Narx hozircha yo'q.** Spec guruhga narx qo'yadi, lekin narx va to'lov shartnoma (Agreement) bilan birga qilinadi.
 - **Guruh kodi** katta harflarga o'tkaziladi va butun tizimda unique (`SAT-2026-OCT`, `ClassGroup.CodeTaken`). Kurs slug'i ham unique (`Course.SlugTaken`).
 - **Ko'p tilli matn.** Kurs nomi va tavsifi, guruhning kirish darajasi (`entryLevel`) Catalogue'dagidek `{ "en", "uz", "ru" }` ko'rinishida `jsonb` ustunda saqlanadi. Kurs nomining inglizchasi majburiy (`Course.NameRequired`).
+
+### Yozilish (enrolment) va navbat
+
+O'quvchi o'zini, ota-ona esa hisobiga bog'langan farzandini `Open` guruhga yozadi. Bo'sh o'rin bo'lsa, yozilish `PendingPayment` (2) bo'ladi va o'rin 24 soat band turadi (`paymentDueOnUtc`). Guruh to'lgan bo'lsa, o'quvchi `Waitlisted` (1) bo'lib navbatga turadi. Payment moduli bo'lmagani uchun to'lov olingach admin yozilishni qo'lda `Active` (3) qiladi. Keyin buni to'lov webhook'i qiladi.
+
+**Endpoint'lar.**
+
+- O'quvchi va ota-ona (`Policies.StudentOrParent`):
+  - `POST /class-groups/{id}/enrolments` `{ "studentUserId" }` — o'quvchi o'z id'sini, ota-ona farzandining `userId` sini (`GET /parents/me/students` dan) yuboradi. Javob: `{ id, status, paymentDueOnUtc }`.
+  - `GET /enrolments?studentUserId=` — o'quvchining barcha yozilishlari, kurs va guruh ma'lumoti bilan; navbatdagilarda `waitlistPosition` (1 dan boshlanadi). Oilaga kim yozgani id bilan emas, `enrolledByMe` bilan ko'rsatiladi: bir nechta ota-ona bir-birining hisob id'sini ko'rmaydi.
+  - `DELETE /enrolments/{id}` — navbatdagi yoki to'lov kutilayotgan yozilishni bekor qiladi.
+- `mentor_admin` va `super_admin` (`Policies.CourseAdmin`):
+  - `GET /admin/class-groups/{id}/enrolments` — guruhning barcha yozilishlari (holat, keyin yozilgan vaqt bo'yicha).
+  - `POST /admin/enrolments/{id}/activate` — to'lov olingach o'rinni tasdiqlaydi.
+  - `DELETE /admin/enrolments/{id}` — istalgan joriy yozilishni (faolini ham) olib tashlaydi.
+
+**Qoidalar va qarorlar.**
+
+- **Kim kimni yozadi.** Bu o'quvchining o'zi yoki unga bog'langan ota-onami, buni Student moduli `FourPrep.Modules.Academy.Student` adapteri orqali (`HasFamilyAccessQuery`) aytadi. Boshqa odam `403 Enrolment.NotYourStudent` oladi. Bekor qilishda esa begona yozilish `404 Enrolment.NotFound` qaytaradi, shunda id orqali boshqa oilaning yozilishi borligi bilinmaydi. Kim tugmani bosgani `enrolledByUserId` da saqlanadi.
+- **To'lanmagan yozilishlar chegarasi.** Bitta o'quvchida bir vaqtda ko'pi bilan 3 ta to'lanmagan yozilish (navbat yoki to'lov kutilmoqda) bo'ladi, hamma guruhlar bo'yicha (`Enrolment.TooManyUnpaid`). Faol yozilishlar hisobga kirmaydi. Shunday qilib bir hisob to'lamasdan ko'p guruhni band qila olmaydi.
+- **O'rinlar.** `PendingPayment` va `Active` o'rin egallaydi, ommaviy guruh kartasida `seatsLeft` shu bilan hisoblanadi. Bir o'quvchi bitta guruhda bir vaqtda faqat bitta joriy yozilishga ega (`Enrolment.AlreadyEnrolled`). Bekor qilgandan keyin qayta yozilishi mumkin. Guruhni tahrirlashda `capacity` o'rin egallaganlar sonidan kam bo'lolmaydi (`ClassGroup.CapacityBelowSeatsTaken`).
+- **Navbat avtomatik.** O'rin bo'shasa (bekor qilish, admin olib tashlashi, muddat o'tishi yoki `capacity` oshishi), navbatdagi birinchi odam o'zi `PendingPayment` ga o'tadi va unga 24 soat beriladi. Navbat tartibi yozilgan vaqt bo'yicha. Unga xabar yuborish Notification moduli bilan qo'shiladi; hozircha frontend `GET /enrolments` dan ko'radi.
+- **Muddat.** Hangfire har 5 daqiqada `academy-expire-unpaid-enrolments` job'ini ishga tushiradi. U muddati o'tgan `PendingPayment` yozilishlarni `Dropped` (5, `dropReason: 3` — to'lanmadi) qiladi va bo'shagan o'rinlarni navbatga beradi. Shuning uchun o'rin muddatdan keyin 5 daqiqagacha band turishi mumkin. Job hamma guruhni bitta saqlashda yozadi: shu paytda biror guruh boshqa so'rov bilan o'zgarsa, butun to'plam keyingi ishga tushishda qayta urinadi.
+- **Bekor qilish.** Oila faqat navbatdagi yoki to'lov kutilayotgan yozilishni bekor qiladi (`dropReason: 1`). Faol, ya'ni to'langan yozilishni faqat admin olib tashlaydi (`dropReason: 2`), chunki pul qaytarilmaydi (`Enrolment.CannotCancel`). Yozilishlar o'chirilmaydi, tarix uchun `Dropped` bo'lib qoladi.
+- **Bir vaqtdagi so'rovlar.** Yozilishlar `ClassGroup` aggregate'ining ichida, guruh qatorida esa `xmin` versiyasi bor. Oxirgi o'ringa ikki kishi bir vaqtda yozilsa, ikkinchisi `409 Conflict.DuplicateKey` oladi va qayta urinadi; o'rinlar sonidan oshib ketmaydi.
+- **Guruh bekor qilinsa,** undagi barcha joriy yozilishlar (navbat, to'lov kutilayotgan va faol) `Dropped` bo'ladi (`dropReason: 4` — guruh bekor qilindi). To'lagan oilani admin boshqa guruhga qo'lda o'tkazadi, pul qaytarilmaydi.
+- **Hali yo'q:** `Completed` (4) holati kurs tugashi bilan birga qo'shiladi. O'quvchi hisobi o'chirilganda uning yozilishlari Academy'da qoladi; event mexanizmi bilan tozalanadi. Spec'dagi to'lov sahifasi ochiq turgan 30 daqiqalik band Payment bilan keladi. Admin ro'yxatida o'quvchi ismi yo'q, faqat `studentUserId`: ismni frontend Student'dan (`GET /students`) oladi.
 
 ## Butun dunyodan foydalanuvchilar
 
