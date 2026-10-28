@@ -1,8 +1,8 @@
-namespace FourPrep.Modules.Student.Application.Students.UpdateMyStudent;
+namespace FourPrep.Common.Application.Exams;
 
 using FourPrep.Common.Domain.Enums;
 
-internal static class ExamScores
+public static class ExamScores
 {
     private sealed record Scale(decimal Min, decimal Max, decimal Step);
 

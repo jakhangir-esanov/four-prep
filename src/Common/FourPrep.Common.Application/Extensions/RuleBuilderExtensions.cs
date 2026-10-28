@@ -32,4 +32,8 @@ public static class RuleBuilderExtensions
     public static IRuleBuilderOptions<T, string?> PhoneNumber<T>(this IRuleBuilder<T, string?> rule) =>
         rule.Must(phone => string.IsNullOrWhiteSpace(phone) || PhoneNumbers.IsValid(phone))
             .WithError(LocalizationErrors.InvalidPhoneNumber);
+
+    public static IRuleBuilderOptions<T, string?> CurrencyCode<T>(this IRuleBuilder<T, string?> rule) =>
+        rule.Must(code => string.IsNullOrWhiteSpace(code) || Currencies.IsValid(code))
+            .WithError(LocalizationErrors.InvalidCurrency);
 }

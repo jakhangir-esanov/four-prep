@@ -47,7 +47,7 @@ Har bir modul o'z PostgreSQL sxemasiga ega va boshqa modulga faqat adapter orqal
 |---|---|---|
 | Auth | Keycloak hisoblari, login, sessiyalar, o'z hisobi, xodimlar hisoblari | tayyor |
 | Student | o'quvchi profili, ota-ona bog'lanishi, mentor; keyinroq o'quvchining bosqichi (stage) va yo'li, test ballari, shaxsiy hujjatlari va offboarding | profil, ota-ona va mentor tayyor |
-| Catalogue | universitetlar, dasturlar, qabul talablari, narxlar, muddatlar, grantlar, yo'nalish davlatlari | skeleton |
+| Catalogue | universitetlar, dasturlar, qabul talablari, narxlar, muddatlar, grantlar, yo'nalish davlatlari | qo'lda kiritish va ochiq qidiruv tayyor; CSV import keyingi bosqichda |
 | Content | yangiliklar, natijalar (results), hamkorlar, About, xodimlarning ochiq profillari | skeleton |
 | Academy | kurslar, guruhlar, yozilish, davomat, mock ballar, placement test | skeleton |
 | Admission | academy arizasi, universitetlarga arizalar, portal akkauntlari, essay, tavsiyanomalar, universitet offerlari, viza | skeleton |
@@ -83,6 +83,48 @@ Foydalanuvchi paneli mehmon uchun ham ishlaydi: katalog, kurslar, yangiliklar ka
 - **Ota-onani bog'lash.** O'quvchi kodni `GET /students/me` dan ko'radi va ota-onasiga beradi. Ota-ona kodni `POST /parents/me/students` ga yuboradi. Bitta o'quvchiga ko'pi bilan 4 ta ota-ona bog'lanadi. O'quvchi `POST /students/me/link-code` bilan yangi kod olsa, eski kod ishlamay qoladi. Kodni faqat o'quvchining o'zi ko'radi: admin uchun `GET /students/{id}` va ro'yxatlarda `linkCode` maydoni yo'q, chunki kodga ega har qanday ota-ona hisobi o'zini o'quvchiga bog'lay oladi.
 - **Mentor.** `mentor_admin` `PUT /students/{id}/mentor` bilan faqat `mentor` rolidagi foydalanuvchini biriktira oladi. Mentor o'z o'quvchilarini `GET /mentors/me/students` orqali ko'radi.
 - **Modullararo chaqiruvlar.** Ular tofan'dagidek adapter loyihalar orqali o'tadi: `FourPrep.Modules.Auth.Student` (register → profil) va `FourPrep.Modules.Student.Auth` (mentor rolini tekshirish).
+
+## Universitetlar katalogi (Catalogue)
+
+Katalog AI Counselor va My Plan uchun yagona fakt manbasi: AI universitet haqida faqat shu yerdagi ma'lumotni aytadi. Shuning uchun har bir fakt guruhi o'z manbasi (`sourceUrl`) va tekshirilgan sanasi (`checkedOn`) bilan saqlanadi. Ma'lumotni `content_admin` (va `super_admin`) staff panelda qo'lda kiritadi; CSV fayldan ommaviy import keyingi bosqichda qo'shiladi.
+
+**Tuzilishi.**
+
+| Aggregate | Ichidagilar | Nima |
+|---|---|---|
+| `Destination` | — | 4Prep ariza xizmatini ko'rsatadigan davlat va uning viza turi (`F-1`, `National visa (D)`) |
+| `University` | `Cost`, `Scholarship` | universitet; o'quv yili bo'yicha narxlar va grantlar |
+| `Program` | `AdmissionRequirement`, `Deadline` | dastur (daraja, yo'nalish, o'qitish tili); qabul mavsumi bo'yicha talablar va raund muddatlari |
+
+**Endpoint'lar.**
+
+- Ochiq, login talab qilmaydi (mehmon ham ko'radi), bitta IP'dan daqiqasiga 120 so'rov (`RateLimitPolicies.PublicRead`, oshsa `429`):
+  - `GET /universities?q=&country=&degree=&major=&budget=&currency=&sat=&partner=&serviceDestinationsOnly=&first=&rows=&sortField=&sortOrder=` — sahifalangan ro'yxat, bir sahifada ko'pi bilan 100 ta (standart 20). Saralash: `name` (standart), `ranking`, `acceptance_rate`, `checked_on`, `is_stale` va boshqa ustunlar.
+  - `GET /universities/{slug}` — universitet, uning dasturlari (talablar va muddatlar bilan), narxlari va grantlari.
+  - `GET /countries` — universiteti bor yoki xizmat yo'nalishi bo'lgan davlatlar: universitetlar soni, `isServiceDestination`, `visaType`.
+  - `GET /majors?q=` — dasturlardagi yo'nalishlar va dasturlar soni (ko'pi bilan 20 ta).
+- `content_admin` va `super_admin` (`Policies.ContentAdmin`):
+  - `PUT /admin/destinations/{countryCode}` `{ "visaType" }` — davlatni xizmat yo'nalishi qiladi yoki viza turini o'zgartiradi; `DELETE` ro'yxatdan olib tashlaydi.
+  - `POST /admin/universities`, `PUT` / `DELETE /admin/universities/{id}`.
+  - `PUT /admin/universities/{id}/costs`, `PUT /admin/universities/{id}/scholarships`.
+  - `POST /admin/universities/{universityId}/programs`, `PUT` / `DELETE /admin/programs/{id}`.
+  - `PUT /admin/programs/{id}/requirements`, `PUT /admin/programs/{id}/deadlines`.
+
+**Qoidalar va qarorlar.**
+
+- **Manba va eskirish.** Har bir universitet, dastur, narx, grant, talab va muddat yozuvida `sourceUrl` (to'liq `http(s)` manzil) va `checkedOn` (kelajakda bo'lmaydi) majburiy. 12 oydan eski fakt javobda `isStale: true` bilan keladi va frontend "eskirgan bo'lishi mumkin" belgisini ko'rsatadi. Belgi har so'rovda bugungi sanadan hisoblanadi, shuning uchun spec'dagi haftalik `stale.check` job'i kerak emas. Har bir yozuvda uni oxirgi marta kim tekshirgani (`checkedByUserId`) saqlanadi.
+- **Ma'lumot yo'q — "not reported".** SAT siyosati, GPA, insholar soni, intervyu kabi maydonlar `null` bo'lishi mumkin: `null` "ma'lum emas" degani, `false` yoki `0` emas. AI va frontend uni taxmin qilmaydi.
+- **Ichki ro'yxatlar to'liq almashtiriladi.** Narxlar, grantlar, talablar va muddatlar alohida `PUT` bilan butun ro'yxat sifatida yuboriladi; yuborilmagani o'chadi. Staff panelda bu jadvallar universitet yoki dastur sahifasida bitta forma bo'lib turadi. Universitet o'chirilsa, uning dasturlari ham o'chadi.
+- **Ko'p tilli matn.** Tavsif, grant miqdori va shartlari `{ "en": "...", "uz": "...", "ru": "..." }` ko'rinishida bitta `jsonb` ustunda saqlanadi. Matn bo'lsa, inglizchasi majburiy; boshqa tillar ixtiyoriy. Javobda hamma tillar keladi, frontend foydalanuvchi tilini, u bo'lmasa inglizchasini ko'rsatadi (xato `messages` bilan bir xil yondashuv). Yangi til qo'shish uchun ustun qo'shish shart emas. Universitet va dastur nomi tarjima qilinmaydi: ular rasmiy nomi bilan yoziladi.
+- **Davlat nomlari saqlanmaydi.** Davlat ISO 3166-1 alpha-2 kodi bilan yuradi, nomini frontend o'z tilida chiqaradi (`Intl.DisplayNames`). Shu sabab spec'dagi `countries.name_i18n` jadvali yo'q.
+- **Xizmat yo'nalishlari kodga yozilmagan.** Ko'rish butun dunyo bo'yicha, xizmat davlatlari esa admin tomonidan `PUT /admin/destinations/...` bilan qo'shiladi. Migratsiya hech qanday davlatni seed qilmaydi: AQSh (F-1) va Yevropa davlatlari ro'yxatini 4Prep o'zi kiritadi.
+- **Pul.** Narxlar valyutaning eng kichik birligida butun son (`tuitionMinor`, `livingMinor`, masalan sent) va ISO 4217 valyuta kodi bilan. O'quv yili boshlanish yili bilan yoziladi (2026/27 → `2026`).
+- **Filtrlar.** `budget` faqat `currency` bilan ishlaydi va universitetning eng so'nggi o'quv yilidagi (to'lov + yashash) narxi shu valyutada va shu summadan oshmasa mos keladi; valyutalar konvertatsiya qilinmaydi. `sat` — SAT talab qilinmaydigan, yoki talab qilinsa o'rtacha 50% oralig'ining pastki chegarasi shu balldan oshmaydigan (yoki noma'lum) dasturi bor universitetlar. `degree`, `major` va `sat` bir dasturga birga qo'llanadi.
+- **Talablar.** Ingliz tili minimumi `{ "Ielts": 6.5, "Toefl": 90, "Duolingo": 120 }` — faqat shu uch test, har biri o'z shkalasida. SAT o'rtacha 50% oralig'i ikkita to'g'ri SAT bali, avval kichigi. GPA o'z shkalasi bilan (masalan 4.0 shkalada 3.5), chunki davlatlarda shkala har xil.
+- **Yo'nalish (`field`) erkin matn.** `GET /majors` dasturlarda yozilgan yo'nalishlardan qidiradi. Standart klassifikator (masalan ISCED-F) keyin, ma'lumot ko'paygach ko'rib chiqiladi.
+- **Logo** hozircha yo'q: Storage moduli qurilgach, fayl id'si qo'shiladi.
+- **Takrorlar.** Bir o'quv yiliga ikkita narx, bir dasturda ikki bir xil raund yoki qabul mavsumi validator'da rad etiladi. Ichki jadvallarda unique indeks yo'q: ro'yxat almashtirilganda eski qatorlar o'chib, yangilari shu saqlashda yoziladi.
+- **jsonb o'qish.** `CatalogueModule` Dapper'ga `Dictionary<string, string>` va `Dictionary<Exam, decimal>` uchun JSON type handler qo'shadi. Dapper handler'lari butun jarayon uchun umumiy: boshqa modul shu turlarni Dapper bilan o'qisa, ular ham JSON deb o'qiladi.
 
 ## Butun dunyodan foydalanuvchilar
 

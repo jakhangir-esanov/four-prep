@@ -25,4 +25,10 @@ public static class LocalizationErrors
         en: "The phone number must be in international format with the country code, for example +14155550100.",
         uz: "Telefon raqami davlat kodi bilan xalqaro formatda bo'lishi kerak, masalan +998901234567.",
         ru: "Номер телефона должен быть в международном формате с кодом страны, например +79161234567.");
+
+    public static readonly Error InvalidCurrency = Error.Problem(
+        "Localization.InvalidCurrency",
+        en: "The currency must be a three-letter ISO 4217 code, for example USD, EUR or GBP.",
+        uz: "Valyuta uch harfli ISO 4217 kodi bo'lishi kerak, masalan USD, EUR yoki GBP.",
+        ru: "Валюта должна быть трёхбуквенным кодом ISO 4217, например USD, EUR или GBP.");
 }

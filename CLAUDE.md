@@ -80,7 +80,7 @@ Modules in `src/Modules/`:
 |---|---|---|
 | Auth | Keycloak accounts, login, sessions, own account, staff accounts | implemented |
 | Student | profiles, parent links, mentors; later the student's stage and path, test scores, personal documents and offboarding | implemented (profiles, parent links, mentors) |
-| Catalogue | universities, programs, admission requirements, costs, deadlines, scholarships, destination countries; every fact carries its source | skeleton, next to build |
+| Catalogue | universities, programs, admission requirements, costs, deadlines, scholarships, destination countries; every fact carries its source | implemented (manual entry, public search); CSV import next |
 | Content | news, results, partners, About, public staff profiles | skeleton, next to build |
 | Academy | courses, class groups, enrolments, attendance, mock scores, placement tests | skeleton |
 | Admission | academy application, university applications, portal accounts, essays, recommendations, university offers, visa | skeleton |
@@ -176,13 +176,13 @@ What Common has today:
 | Messaging | `ICommand`, `ICommandHandler`, `IQuery`, `IQueryHandler`, `IPagedListQuery`, `IPagedListQueryHandler` |
 | Pipeline | exception handling, request logging, validation behaviors |
 | Paging | `PagingRequest<T>`, `PagedList<T>` |
-| Data | `IDbConnectionFactory` (Dapper), `DateOnly` type handler |
+| Data | `IDbConnectionFactory` (Dapper), `DateOnly` type handler, `LikePatterns` (escaped `ILIKE` search) |
 | Time | `IDateTimeProvider`, `ITimeZoneContext`, `TimeZones` |
-| Localization | `Countries`, `Locales`, `PhoneNumbers`, `LocalizationErrors` |
-| Validation | `RuleBuilderExtensions`: `WithError`, `CountryCode`, `TimeZoneId`, `Locale`, `PhoneNumber` |
+| Localization | `Countries`, `Currencies` (ISO 4217), `Locales`, `PhoneNumbers`, `LocalizationErrors` |
+| Validation | `RuleBuilderExtensions`: `WithError`, `CountryCode`, `CurrencyCode`, `TimeZoneId`, `Locale`, `PhoneNumber`; `ExamScores` (valid score per `Exam`) |
 | Authorization | `Roles`, `Policies`, JWT + Keycloak role mapping |
-| Presentation | `IEndpoint`, `AddEndpoints`/`MapEndpoints`, `ApiResults.ToResponse`, `RateLimitPolicies` |
-| Shared enums | `Exam` |
+| Presentation | `IEndpoint`, `AddEndpoints`/`MapEndpoints`, `ApiResults.ToResponse`, `RateLimitPolicies` (`Email`, `PublicRead`) |
+| Shared enums | `Exam`, `DegreeLevel`, `IntakeTerm`, `SatPolicy`, `ScholarshipKind` |
 | Exceptions | `ApplicationException` |
 
 Good candidates for Common: cross-cutting abstractions, generic behaviors, shared validation rules,
@@ -355,7 +355,8 @@ An endpoint:
 - sends one command or query through `ISender`
 - returns `result.ToResponse()`
 - declares `.RequireAuthorization(Policies.X)` (only public endpoints have none: login and register, and reads of public information such as the
-  catalogue, courses and news, which guests use without signing in),
+  catalogue, courses and news, which guests use without signing in; those reads declare
+  `.RequireRateLimiting(RateLimitPolicies.PublicRead)`),
   `.RequireRateLimiting(RateLimitPolicies.Email)` when it makes the platform send an email,
   its `.Produces(...)` status codes, and `.WithTags("<Module> / <Audience>")`
 

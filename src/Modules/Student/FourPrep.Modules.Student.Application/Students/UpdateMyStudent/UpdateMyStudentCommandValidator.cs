@@ -1,6 +1,7 @@
 namespace FourPrep.Modules.Student.Application.Students.UpdateMyStudent;
 
 using FluentValidation;
+using FourPrep.Common.Application.Exams;
 using FourPrep.Common.Application.Clock;
 using FourPrep.Common.Application.Extensions;
 using FourPrep.Modules.Student.Domain.Students;
