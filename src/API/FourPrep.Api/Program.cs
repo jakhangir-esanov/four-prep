@@ -7,14 +7,17 @@ using FourPrep.Common.Infrastructure;
 using FourPrep.Modules.AI.Infrastructure;
 using FourPrep.Modules.Auth.Infrastructure;
 using FourPrep.Modules.Chat.Infrastructure;
+using FourPrep.Modules.Audit.Infrastructure;
 using FourPrep.Common.Presentation.Endpoints;
 using FourPrep.Modules.Academy.Infrastructure;
 using FourPrep.Modules.Content.Infrastructure;
+using FourPrep.Modules.Meeting.Infrastructure;
 using FourPrep.Modules.Payment.Infrastructure;
 using FourPrep.Modules.Storage.Infrastructure;
 using FourPrep.Modules.Student.Infrastructure;
 using FourPrep.Modules.Admission.Infrastructure;
 using FourPrep.Modules.Agreement.Infrastructure;
+using FourPrep.Modules.Catalogue.Infrastructure;
 using FourPrep.Common.Infrastructure.Configuration;
 using FourPrep.Modules.Notification.Infrastructure;
 
@@ -42,7 +45,10 @@ Assembly[] moduleApplicationAssemblies =
     FourPrep.Modules.AI.Application.AssemblyReference.Assembly,
     FourPrep.Modules.Academy.Application.AssemblyReference.Assembly,
     FourPrep.Modules.Agreement.Application.AssemblyReference.Assembly,
-    FourPrep.Modules.Admission.Application.AssemblyReference.Assembly
+    FourPrep.Modules.Admission.Application.AssemblyReference.Assembly,
+    FourPrep.Modules.Audit.Application.AssemblyReference.Assembly,
+    FourPrep.Modules.Catalogue.Application.AssemblyReference.Assembly,
+    FourPrep.Modules.Meeting.Application.AssemblyReference.Assembly
 ];
 builder.Services.AddApplication(moduleApplicationAssemblies);
 
@@ -60,6 +66,9 @@ builder.Services.AddAIModule(builder.Configuration);
 builder.Services.AddAcademyModule(builder.Configuration);
 builder.Services.AddAgreementModule(builder.Configuration);
 builder.Services.AddAdmissionModule(builder.Configuration);
+builder.Services.AddAuditModule(builder.Configuration);
+builder.Services.AddCatalogueModule(builder.Configuration);
+builder.Services.AddMeetingModule(builder.Configuration);
 
 builder.Services.AddCorsPolicy(builder.Configuration);
 builder.Services.AddRateLimitPolicies();

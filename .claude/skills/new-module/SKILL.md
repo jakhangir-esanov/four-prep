@@ -1,6 +1,6 @@
 ---
 name: new-module
-description: Brings a FourPrep skeleton module to life (Content, Academy, Payment, Admission, Agreement, AI, Chat, Notification, Storage) — its first aggregate, persistence, migration, use cases and endpoints — or adds a module that does not exist yet. Use whenever the user says "yangi modul", "modulni boshlaymiz", "Content'ni qilamiz", "new module", or starts work on a module that has no aggregate yet.
+description: Brings a FourPrep skeleton module to life (Catalogue, Content, Academy, Payment, Admission, Agreement, Meeting, AI, Chat, Notification, Storage, Audit) — its first aggregate, persistence, migration, use cases and endpoints — or adds a module that does not exist yet. Use whenever the user says "yangi modul", "modulni boshlaymiz", "Content'ni qilamiz", "new module", or starts work on a module that has no aggregate yet.
 ---
 
 # New module
@@ -15,9 +15,9 @@ description: Brings a FourPrep skeleton module to life (Content, Academy, Paymen
 If the user already gave them, do not ask again. Ask about business rules you cannot infer; do not
 invent fields, limits or exam lists (the `Exam` values are still unconfirmed).
 
-Before creating anything new, check `src/Modules`: Content, Academy, Payment, Admission, Agreement, AI,
-Chat, Notification and Storage already exist as skeletons. Fill the skeleton; never create a parallel
-module. If tofan has the same module, port its shape, then remove everything FourPrep does not use and
+Before creating anything new, check `src/Modules`: Catalogue, Content, Academy, Payment, Admission,
+Agreement, Meeting, AI, Chat, Notification, Storage and Audit already exist as skeletons, and CLAUDE.md 3.2
+says what each one owns. Fill the skeleton; never create a parallel module. If tofan has the same module, port its shape, then remove everything FourPrep does not use and
 everything Uzbekistan-only.
 
 ## A skeleton already has

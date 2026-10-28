@@ -4,13 +4,16 @@ using Microsoft.EntityFrameworkCore;
 using FourPrep.Modules.AI.Infrastructure.Database;
 using FourPrep.Modules.Auth.Infrastructure.Database;
 using FourPrep.Modules.Chat.Infrastructure.Database;
+using FourPrep.Modules.Audit.Infrastructure.Database;
 using FourPrep.Modules.Academy.Infrastructure.Database;
 using FourPrep.Modules.Content.Infrastructure.Database;
+using FourPrep.Modules.Meeting.Infrastructure.Database;
 using FourPrep.Modules.Payment.Infrastructure.Database;
 using FourPrep.Modules.Storage.Infrastructure.Database;
 using FourPrep.Modules.Student.Infrastructure.Database;
 using FourPrep.Modules.Admission.Infrastructure.Database;
 using FourPrep.Modules.Agreement.Infrastructure.Database;
+using FourPrep.Modules.Catalogue.Infrastructure.Database;
 using FourPrep.Modules.Notification.Infrastructure.Database;
 
 internal sealed class DatabaseOptions
@@ -51,6 +54,9 @@ internal static class MigrationExtensions
         ApplyMigration<AcademyDbContext>(scope);
         ApplyMigration<AgreementDbContext>(scope);
         ApplyMigration<AdmissionDbContext>(scope);
+        ApplyMigration<AuditDbContext>(scope);
+        ApplyMigration<CatalogueDbContext>(scope);
+        ApplyMigration<MeetingDbContext>(scope);
     }
 
     private static void ApplyMigration<TDbContext>(IServiceScope scope)

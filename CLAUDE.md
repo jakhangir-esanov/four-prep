@@ -76,13 +76,30 @@ Each module's `test/FourPrep.Modules.<Module>.ArchitectureTests` checks these la
 
 Modules in `src/Modules/`:
 
-| Module | State |
-|---|---|
-| Auth | implemented (Keycloak accounts, login, sessions, own account) |
-| Student | implemented (profiles, parent links, mentors) |
-| Content | skeleton, next to build |
-| Academy | skeleton |
-| Payment, Admission, Agreement, AI, Chat, Notification, Storage | skeletons |
+| Module | Owns | State |
+|---|---|---|
+| Auth | Keycloak accounts, login, sessions, own account, staff accounts | implemented |
+| Student | profiles, parent links, mentors; later the student's stage and path, test scores, personal documents and offboarding | implemented (profiles, parent links, mentors) |
+| Catalogue | universities, programs, admission requirements, costs, deadlines, scholarships, destination countries; every fact carries its source | skeleton, next to build |
+| Content | news, results, partners, About, public staff profiles | skeleton, next to build |
+| Academy | courses, class groups, enrolments, attendance, mock scores, placement tests | skeleton |
+| Admission | academy application, university applications, portal accounts, essays, recommendations, university offers, visa | skeleton |
+| Agreement | products, offers and discounts, agreements, signatures | skeleton |
+| Payment | invoices, payments, the payment provider's webhook | skeleton |
+| Meeting | consultations, staff availability, video rooms, mock interviews | skeleton |
+| AI | AI Counselor, plan wizard and My Plan, weekly check-in | skeleton |
+| Chat | threads and messages | skeleton |
+| Notification | in-app, email and Telegram notifications | skeleton |
+| Storage | file bytes only: objects, signed upload and download links, deletes | skeleton |
+| Audit | the append-only log of sensitive actions from every module; never purged | skeleton |
+
+Ownership rules that are easy to get wrong:
+- A personal document (passport, transcript, certificate) is a Student record: its type, status,
+  verification and purge live in Student. Storage keeps the bytes and knows nothing about what a file is.
+- The university catalogue is Catalogue, not Content: the AI reads only Catalogue facts, and those
+  facts carry a source and a checked date that news and results do not have.
+- A meeting is a Meeting record whoever books it (consultation, mock interview); other modules keep
+  only the meeting id.
 
 A skeleton has its four projects, `AssemblyReference`, `ICurrentUser`, `IUnitOfWork`, a `DbContext`
 with its schema, registration in `Program.cs` and `MigrationExtensions`, and its two test projects.
@@ -337,7 +354,8 @@ An endpoint:
 - maps the route and binds the request
 - sends one command or query through `ISender`
 - returns `result.ToResponse()`
-- declares `.RequireAuthorization(Policies.X)` (only public endpoints like login and register have none),
+- declares `.RequireAuthorization(Policies.X)` (only public endpoints have none: login and register, and reads of public information such as the
+  catalogue, courses and news, which guests use without signing in),
   `.RequireRateLimiting(RateLimitPolicies.Email)` when it makes the platform send an email,
   its `.Produces(...)` status codes, and `.WithTags("<Module> / <Audience>")`
 

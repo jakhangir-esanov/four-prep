@@ -57,6 +57,16 @@
     <Project Path="src/Modules/AI/test/FourPrep.Modules.AI.ArchitectureTests/FourPrep.Modules.AI.ArchitectureTests.csproj" />
     <Project Path="src/Modules/AI/test/FourPrep.Modules.AI.UnitTests/FourPrep.Modules.AI.UnitTests.csproj" />
   </Folder>
+  <Folder Name="/src/Modules/Audit/">
+    <Project Path="src/Modules/Audit/FourPrep.Modules.Audit.Application/FourPrep.Modules.Audit.Application.csproj" />
+    <Project Path="src/Modules/Audit/FourPrep.Modules.Audit.Domain/FourPrep.Modules.Audit.Domain.csproj" />
+    <Project Path="src/Modules/Audit/FourPrep.Modules.Audit.Infrastructure/FourPrep.Modules.Audit.Infrastructure.csproj" />
+    <Project Path="src/Modules/Audit/FourPrep.Modules.Audit.Presentation/FourPrep.Modules.Audit.Presentation.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/Audit/test/">
+    <Project Path="src/Modules/Audit/test/FourPrep.Modules.Audit.ArchitectureTests/FourPrep.Modules.Audit.ArchitectureTests.csproj" />
+    <Project Path="src/Modules/Audit/test/FourPrep.Modules.Audit.UnitTests/FourPrep.Modules.Audit.UnitTests.csproj" />
+  </Folder>
   <Folder Name="/src/Modules/Auth/">
     <Project Path="src/Modules/Auth/FourPrep.Modules.Auth.Application/FourPrep.Modules.Auth.Application.csproj" />
     <Project Path="src/Modules/Auth/FourPrep.Modules.Auth.Domain/FourPrep.Modules.Auth.Domain.csproj" />
@@ -67,6 +77,16 @@
   <Folder Name="/src/Modules/Auth/test/">
     <Project Path="src/Modules/Auth/test/FourPrep.Modules.Auth.ArchitectureTests/FourPrep.Modules.Auth.ArchitectureTests.csproj" />
     <Project Path="src/Modules/Auth/test/FourPrep.Modules.Auth.UnitTests/FourPrep.Modules.Auth.UnitTests.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/Catalogue/">
+    <Project Path="src/Modules/Catalogue/FourPrep.Modules.Catalogue.Application/FourPrep.Modules.Catalogue.Application.csproj" />
+    <Project Path="src/Modules/Catalogue/FourPrep.Modules.Catalogue.Domain/FourPrep.Modules.Catalogue.Domain.csproj" />
+    <Project Path="src/Modules/Catalogue/FourPrep.Modules.Catalogue.Infrastructure/FourPrep.Modules.Catalogue.Infrastructure.csproj" />
+    <Project Path="src/Modules/Catalogue/FourPrep.Modules.Catalogue.Presentation/FourPrep.Modules.Catalogue.Presentation.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/Catalogue/test/">
+    <Project Path="src/Modules/Catalogue/test/FourPrep.Modules.Catalogue.ArchitectureTests/FourPrep.Modules.Catalogue.ArchitectureTests.csproj" />
+    <Project Path="src/Modules/Catalogue/test/FourPrep.Modules.Catalogue.UnitTests/FourPrep.Modules.Catalogue.UnitTests.csproj" />
   </Folder>
   <Folder Name="/src/Modules/Chat/">
     <Project Path="src/Modules/Chat/FourPrep.Modules.Chat.Application/FourPrep.Modules.Chat.Application.csproj" />
@@ -87,6 +107,16 @@
   <Folder Name="/src/Modules/Content/test/">
     <Project Path="src/Modules/Content/test/FourPrep.Modules.Content.ArchitectureTests/FourPrep.Modules.Content.ArchitectureTests.csproj" />
     <Project Path="src/Modules/Content/test/FourPrep.Modules.Content.UnitTests/FourPrep.Modules.Content.UnitTests.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/Meeting/">
+    <Project Path="src/Modules/Meeting/FourPrep.Modules.Meeting.Application/FourPrep.Modules.Meeting.Application.csproj" />
+    <Project Path="src/Modules/Meeting/FourPrep.Modules.Meeting.Domain/FourPrep.Modules.Meeting.Domain.csproj" />
+    <Project Path="src/Modules/Meeting/FourPrep.Modules.Meeting.Infrastructure/FourPrep.Modules.Meeting.Infrastructure.csproj" />
+    <Project Path="src/Modules/Meeting/FourPrep.Modules.Meeting.Presentation/FourPrep.Modules.Meeting.Presentation.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/Meeting/test/">
+    <Project Path="src/Modules/Meeting/test/FourPrep.Modules.Meeting.ArchitectureTests/FourPrep.Modules.Meeting.ArchitectureTests.csproj" />
+    <Project Path="src/Modules/Meeting/test/FourPrep.Modules.Meeting.UnitTests/FourPrep.Modules.Meeting.UnitTests.csproj" />
   </Folder>
   <Folder Name="/src/Modules/Notification/">
     <Project Path="src/Modules/Notification/FourPrep.Modules.Notification.Application/FourPrep.Modules.Notification.Application.csproj" />

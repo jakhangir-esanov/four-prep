@@ -20,5 +20,8 @@
     <ProjectReference Include="..\..\Modules\Academy\FourPrep.Modules.Academy.Infrastructure\FourPrep.Modules.Academy.Infrastructure.csproj" />
     <ProjectReference Include="..\..\Modules\Agreement\FourPrep.Modules.Agreement.Infrastructure\FourPrep.Modules.Agreement.Infrastructure.csproj" />
     <ProjectReference Include="..\..\Modules\Admission\FourPrep.Modules.Admission.Infrastructure\FourPrep.Modules.Admission.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\Modules\Audit\FourPrep.Modules.Audit.Infrastructure\FourPrep.Modules.Audit.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\Modules\Catalogue\FourPrep.Modules.Catalogue.Infrastructure\FourPrep.Modules.Catalogue.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\Modules\Meeting\FourPrep.Modules.Meeting.Infrastructure\FourPrep.Modules.Meeting.Infrastructure.csproj" />
   </ItemGroup>
 </Project>

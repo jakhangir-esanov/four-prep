@@ -1,0 +1,6 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\Common\FourPrep.Common.Presentation\FourPrep.Common.Presentation.csproj" />
+    <ProjectReference Include="..\FourPrep.Modules.Audit.Application\FourPrep.Modules.Audit.Application.csproj" />
+  </ItemGroup>
+</Project>

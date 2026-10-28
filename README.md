@@ -39,6 +39,36 @@ Kerak bo'ladi: .NET 10 SDK, Docker va `localhost:5432` da ishlab turgan PostgreS
 
 Bu qiymatlarni prod'da ishlatmang.
 
+## Modullar
+
+Har bir modul o'z PostgreSQL sxemasiga ega va boshqa modulga faqat adapter orqali murojaat qiladi (`CLAUDE.md`, 3.3).
+
+| Modul | Nima uniki | Holati |
+|---|---|---|
+| Auth | Keycloak hisoblari, login, sessiyalar, o'z hisobi, xodimlar hisoblari | tayyor |
+| Student | o'quvchi profili, ota-ona bog'lanishi, mentor; keyinroq o'quvchining bosqichi (stage) va yo'li, test ballari, shaxsiy hujjatlari va offboarding | profil, ota-ona va mentor tayyor |
+| Catalogue | universitetlar, dasturlar, qabul talablari, narxlar, muddatlar, grantlar, yo'nalish davlatlari | skeleton |
+| Content | yangiliklar, natijalar (results), hamkorlar, About, xodimlarning ochiq profillari | skeleton |
+| Academy | kurslar, guruhlar, yozilish, davomat, mock ballar, placement test | skeleton |
+| Admission | academy arizasi, universitetlarga arizalar, portal akkauntlari, essay, tavsiyanomalar, universitet offerlari, viza | skeleton |
+| Agreement | mahsulotlar, offer va chegirmalar, shartnomalar, imzolar | skeleton |
+| Payment | invoice, to'lovlar, to'lov tizimining webhook'i | skeleton |
+| Meeting | konsultatsiyalar, xodimlarning bo'sh vaqtlari, video xonalar, mock interview | skeleton |
+| AI | AI Counselor, plan wizard va My Plan, haftalik check-in | skeleton |
+| Chat | suhbatlar va xabarlar | skeleton |
+| Notification | ilova ichidagi, email va Telegram bildirishnomalari | skeleton |
+| Storage | faqat fayl baytlari: obyektlar, yuklash va yuklab olish uchun imzolangan havolalar, o'chirish | skeleton |
+| Audit | barcha modullardagi muhim amallarning faqat qo'shiladigan (append-only) jurnali; hech qachon o'chirilmaydi | skeleton |
+
+Nega shunday bo'lindi:
+
+- **Catalogue Content'dan alohida.** AI universitetlar haqida faqat katalogdagi faktlarga tayanadi, har bir faktning manbasi (`source_url`) va tekshirilgan sanasi bor, eskirsa ogohlantiriladi. Yangilik va natijalarda bunday qoidalar yo'q. Ikkalasini `content_admin` boshqaradi, lekin ma'lumot va qoidalar har xil, AI esa faqat katalogga adapter orqali murojaat qiladi. Bitta Content moduli ham ko'rib chiqildi: unda AI yangiliklar bilan bir modulga bog'lanib qolardi.
+- **Hujjatlar Student'da.** Pasport, transkript, sertifikat o'quvchining yozuvi: turi, holati (yuklangan, tasdiqlangan, rad etilgan), kim tekshirgani va qachon o'chirilishi Student'da saqlanadi. Storage faqat baytlarni saqlaydi va fayl nima ekanini bilmaydi, Student hujjati Storage'dagi fayl id'siga ishora qiladi. Offboarding'da hujjatlarni o'chirishni ham Student boshqaradi: yozuv qoladi, fayl o'chadi. Hujjatlarni Storage'ga yoki alohida modulga berish ko'rib chiqildi: Storage texnik ombor bo'lib qolishi kerak, alohida modul esa offboarding'ni ikki modulga bo'lib yuborardi.
+- **Meeting alohida.** Konsultatsiyani Admission, mock interview'ni Admission va Academy, darslarni Academy ishlatadi. Uchrashuv, xodimning bo'sh vaqti va video xona bitta joyda turadi, qolgan modullar faqat uchrashuv id'sini saqlaydi.
+- **Audit alohida.** Jurnal hech qachon o'chirilmaydi va boshqa modullarning offboarding'i unga tegmaydi. Modullar unga qanday yozishi (event yoki adapter) Audit qurilayotganda hal qilinadi.
+
+Foydalanuvchi paneli mehmon uchun ham ishlaydi: katalog, kurslar, yangiliklar kabi umumiy ma'lumotni o'qiydigan endpoint'lar login talab qilmaydi. Shaxsiy ma'lumot va o'zgartirish uchun esa login kerak.
+
 ## Keycloak bo'yicha eslatmalar
 
 - **User Profile.** Keycloak 26 standart holatda `firstName` va `lastName` ni majburiy qiladi. Ism-familiyasiz yaratilgan foydalanuvchi login paytida `Account is not fully set up` xatosini oladi. Realm faylida bu ikki maydon ixtiyoriy qilingan.
