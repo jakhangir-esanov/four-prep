@@ -1,6 +1,7 @@
 namespace FourPrep.Modules.Catalogue.Application.Universities.ReplaceUniversityScholarships;
 
 using FourPrep.Common.Domain;
+using FourPrep.Common.Domain.Localization;
 using FourPrep.Common.Domain.Enums;
 using FourPrep.Common.Application.Clock;
 using FourPrep.Common.Application.Messaging;

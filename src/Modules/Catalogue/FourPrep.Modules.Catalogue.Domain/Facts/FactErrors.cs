@@ -15,10 +15,4 @@ public static class FactErrors
         en: "The date the data was checked cannot be in the future.",
         uz: "Ma'lumot tekshirilgan sana kelajakda bo'lishi mumkin emas.",
         ru: "Дата проверки данных не может быть в будущем.");
-
-    public static readonly Error MissingEnglishText = Error.Problem(
-        "Fact.MissingEnglishText",
-        en: "Translated text must include an English version.",
-        uz: "Tarjima qilingan matnda inglizcha varianti bo'lishi shart.",
-        ru: "Переведённый текст должен содержать английскую версию.");
 }

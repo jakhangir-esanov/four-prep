@@ -6,9 +6,9 @@ paths:
 
 # Domain rules
 
-- One folder, one aggregate: `<Entities>/` holds `<Entity>.cs`, `<Entity>Errors.cs` and
-  `I<Entity>Repository.cs`, nothing else. A folder with only errors is fine
-  (`Authentication/AuthenticationErrors`). `test/FourPrep.ArchitectureTests/Domain/DomainFolderTests.cs`
+- One folder, one aggregate: `<Entities>/` holds `<Entity>.cs`, `<Entity>Errors.cs`,
+  `I<Entity>Repository.cs` and enums only that aggregate uses (`ClassGroupStatus`), nothing else.
+  A folder with only errors is fine (`Authentication/AuthenticationErrors`). `test/FourPrep.ArchitectureTests/Domain/DomainFolderTests.cs`
   enforces it.
 - Entities are `sealed`, have `Guid Id`, a static `Create(...)` and one method per change
   (`UpdateProfile`, `AssignMentor`, `ChangeLinkCode`). Handlers call those methods; they never set

@@ -31,4 +31,10 @@ public static class LocalizationErrors
         en: "The currency must be a three-letter ISO 4217 code, for example USD, EUR or GBP.",
         uz: "Valyuta uch harfli ISO 4217 kodi bo'lishi kerak, masalan USD, EUR yoki GBP.",
         ru: "Валюта должна быть трёхбуквенным кодом ISO 4217, например USD, EUR или GBP.");
+
+    public static readonly Error MissingEnglishText = Error.Problem(
+        "Localization.MissingEnglishText",
+        en: "Translated text must include an English version.",
+        uz: "Tarjima qilingan matnda inglizcha varianti bo'lishi shart.",
+        ru: "Переведённый текст должен содержать английскую версию.");
 }

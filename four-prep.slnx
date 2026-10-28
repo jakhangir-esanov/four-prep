@@ -19,6 +19,7 @@
   <Folder Name="/src/Modules/" />
   <Folder Name="/src/Modules/Academy/">
     <Project Path="src/Modules/Academy/FourPrep.Modules.Academy.Application/FourPrep.Modules.Academy.Application.csproj" />
+    <Project Path="src/Modules/Academy/FourPrep.Modules.Academy.Auth/FourPrep.Modules.Academy.Auth.csproj" />
     <Project Path="src/Modules/Academy/FourPrep.Modules.Academy.Domain/FourPrep.Modules.Academy.Domain.csproj" />
     <Project Path="src/Modules/Academy/FourPrep.Modules.Academy.Infrastructure/FourPrep.Modules.Academy.Infrastructure.csproj" />
     <Project Path="src/Modules/Academy/FourPrep.Modules.Academy.Presentation/FourPrep.Modules.Academy.Presentation.csproj" />

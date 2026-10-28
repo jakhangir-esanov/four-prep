@@ -11,5 +11,6 @@ public static class Policies
     public const string Teacher = "TeacherOnly";
     public const string MentorAdmin = "MentorAdminOnly";
     public const string ContentAdmin = "ContentAdminOnly";
+    public const string CourseAdmin = "CourseAdminOnly";
     public const string SuperAdmin = "SuperAdminOnly";
 }

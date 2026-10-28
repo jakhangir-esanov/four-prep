@@ -2,6 +2,7 @@ namespace FourPrep.Modules.Catalogue.Application.Universities.ReplaceUniversityS
 
 using FluentValidation;
 using FourPrep.Common.Application.Clock;
+using FourPrep.Common.Application.Extensions;
 using FourPrep.Modules.Catalogue.Application.Facts;
 
 internal sealed class ReplaceUniversityScholarshipsCommandValidator

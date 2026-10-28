@@ -1,5 +1,6 @@
 namespace FourPrep.Modules.Catalogue.UnitTests.Facts;
 
+using FourPrep.Common.Domain.Localization;
 using FourPrep.Modules.Catalogue.Application.Facts;
 
 public class FactTests

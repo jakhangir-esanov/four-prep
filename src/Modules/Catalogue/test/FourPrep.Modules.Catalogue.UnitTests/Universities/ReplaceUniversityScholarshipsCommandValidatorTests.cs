@@ -1,7 +1,7 @@
 namespace FourPrep.Modules.Catalogue.UnitTests.Universities;
 
 using FourPrep.Common.Domain.Enums;
-using FourPrep.Modules.Catalogue.Domain.Facts;
+using FourPrep.Common.Domain.Localization;
 using FourPrep.Modules.Catalogue.Application.Universities.ReplaceUniversityScholarships;
 
 public class ReplaceUniversityScholarshipsCommandValidatorTests
@@ -40,7 +40,7 @@ public class ReplaceUniversityScholarshipsCommandValidatorTests
 
         var error = Assert.Single(Validator.Validate(command).Errors);
 
-        Assert.Equal(FactErrors.MissingEnglishText.Code, error.ErrorCode);
+        Assert.Equal(LocalizationErrors.MissingEnglishText.Code, error.ErrorCode);
         Assert.Equal("Scholarships[0].Eligibility", error.PropertyName);
     }
 

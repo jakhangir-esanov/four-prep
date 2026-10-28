@@ -45,6 +45,9 @@ internal static class AuthenticationExtensions
             .AddPolicy(Policies.ContentAdmin, policy => policy
                 .RequireAuthenticatedUser()
                 .RequireRole(Roles.ContentAdmin, Roles.SuperAdmin))
+            .AddPolicy(Policies.CourseAdmin, policy => policy
+                .RequireAuthenticatedUser()
+                .RequireRole(Roles.MentorAdmin, Roles.SuperAdmin))
             .AddPolicy(Policies.SuperAdmin, policy => policy
                 .RequireAuthenticatedUser()
                 .RequireRole(Roles.SuperAdmin));

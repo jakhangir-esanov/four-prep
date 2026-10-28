@@ -74,7 +74,7 @@ public class UniversityDetailsValidatorTests
     {
         AssertSingleError(
             Details() with { Description = new Dictionary<string, string> { ["uz"] = "Davlat universiteti" } },
-            FactErrors.MissingEnglishText.Code,
+            LocalizationErrors.MissingEnglishText.Code,
             "Details.Description");
     }
 

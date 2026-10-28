@@ -1,4 +1,4 @@
-namespace FourPrep.Modules.Catalogue.Infrastructure.Json;
+namespace FourPrep.Common.Infrastructure.Data;
 
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
-internal static class JsonColumnExtensions
+public static class JsonColumnExtensions
 {
     private const string JsonbColumnType = "jsonb";
 

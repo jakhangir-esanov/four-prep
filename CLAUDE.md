@@ -28,7 +28,7 @@ People in the system, as Keycloak realm roles (`Roles` in Common):
 - `parent` — signs up through `POST /auth/register-parent`, links to a child with the student's link code
 - `mentor`, `teacher` — staff
 - `mentor_admin` — assigns mentors to students
-- `content_admin` — manages learning content
+- `content_admin` — publishes news and other media only; it does not manage courses or groups
 - `super_admin` — creates staff accounts through `POST /admin/users`
 
 Backend stack:
@@ -81,8 +81,8 @@ Modules in `src/Modules/`:
 | Auth | Keycloak accounts, login, sessions, own account, staff accounts | implemented |
 | Student | profiles, parent links, mentors; later the student's stage and path, test scores, personal documents and offboarding | implemented (profiles, parent links, mentors) |
 | Catalogue | universities, programs, admission requirements, costs, deadlines, scholarships, destination countries; every fact carries its source | implemented (manual entry, CSV import, public search) |
-| Content | news, results, partners, About, public staff profiles | skeleton, next to build |
-| Academy | courses, class groups, enrolments, attendance, mock scores, placement tests | skeleton |
+| Content | news, results, partners, About, public staff profiles | skeleton |
+| Academy | courses, class groups, enrolments, attendance, mock scores, placement tests | implemented (courses, class groups, public course pages); no enrolment yet |
 | Admission | academy application, university applications, portal accounts, essays, recommendations, university offers, visa | skeleton |
 | Agreement | products, offers and discounts, agreements, signatures | skeleton |
 | Payment | invoices, payments, the payment provider's webhook | skeleton |
@@ -176,10 +176,10 @@ What Common has today:
 | Messaging | `ICommand`, `ICommandHandler`, `IQuery`, `IQueryHandler`, `IPagedListQuery`, `IPagedListQueryHandler` |
 | Pipeline | exception handling, request logging, validation behaviors |
 | Paging | `PagingRequest<T>`, `PagedList<T>` |
-| Data | `IDbConnectionFactory` (Dapper), `DateOnly` type handler, `LikePatterns` (escaped `ILIKE` search) |
+| Data | `IDbConnectionFactory` (Dapper), `DateOnly` and `TimeOnly` type handlers, `LikePatterns` (escaped `ILIKE` search), `HasJsonbConversion` and `JsonTypeHandler<T>` (jsonb columns) |
 | Time | `IDateTimeProvider`, `ITimeZoneContext`, `TimeZones` |
-| Localization | `Countries`, `Currencies` (ISO 4217), `Locales`, `PhoneNumbers`, `LocalizationErrors` |
-| Validation | `RuleBuilderExtensions`: `WithError`, `CountryCode`, `CurrencyCode`, `TimeZoneId`, `Locale`, `PhoneNumber`; `ExamScores` (valid score per `Exam`) |
+| Localization | `Countries`, `Currencies` (ISO 4217), `Locales`, `PhoneNumbers`, `LocalizedTexts` (text in `en`/`uz`/`ru`), `LocalizationErrors` |
+| Validation | `RuleBuilderExtensions`: `WithError`, `CountryCode`, `CurrencyCode`, `TimeZoneId`, `Locale`, `PhoneNumber`, `LocalizedText`; `ExamScores` (valid score per `Exam`) |
 | Authorization | `Roles`, `Policies`, JWT + Keycloak role mapping |
 | Presentation | `IEndpoint`, `AddEndpoints`/`MapEndpoints`, `ApiResults.ToResponse`, `RateLimitPolicies` (`Email`, `PublicRead`) |
 | Shared enums | `Exam`, `DegreeLevel`, `IntakeTerm`, `SatPolicy`, `ScholarshipKind` |
@@ -299,7 +299,8 @@ that works for any locale, decided with the user.
 Contains entities, repository interfaces and `<Entity>Errors`.
 
 One folder, one aggregate: every folder in a module's Domain project holds one entity, its
-`<Entity>Errors` and its `I<Entity>Repository`, and nothing else. A folder with only errors
+`<Entity>Errors`, its `I<Entity>Repository` and the enums only that aggregate uses
+(`ClassGroupStatus`), and nothing else. A folder with only errors
 (e.g. `Authentication/AuthenticationErrors`) is fine. `test/FourPrep.ArchitectureTests/Domain/DomainFolderTests.cs`
 enforces this.
 

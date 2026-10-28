@@ -3,7 +3,7 @@ namespace FourPrep.Modules.Catalogue.Infrastructure.Programs;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using FourPrep.Modules.Catalogue.Domain.Programs;
-using FourPrep.Modules.Catalogue.Infrastructure.Json;
+using FourPrep.Common.Infrastructure.Data;
 using FourPrep.Modules.Catalogue.Domain.Universities;
 
 internal sealed class ProgramConfiguration : IEntityTypeConfiguration<Program>

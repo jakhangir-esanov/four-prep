@@ -36,4 +36,13 @@ public static class RuleBuilderExtensions
     public static IRuleBuilderOptions<T, string?> CurrencyCode<T>(this IRuleBuilder<T, string?> rule) =>
         rule.Must(code => string.IsNullOrWhiteSpace(code) || Currencies.IsValid(code))
             .WithError(LocalizationErrors.InvalidCurrency);
+
+    public static IRuleBuilderOptions<T, IReadOnlyDictionary<string, string>?> LocalizedText<T>(
+        this IRuleBuilder<T, IReadOnlyDictionary<string, string>?> rule,
+        int maxLength) =>
+        rule.Must(text => text is null || text.Keys.All(Locales.IsSupported))
+            .WithError(LocalizationErrors.UnsupportedLocale)
+            .Must(text => text is null || text.Values.All(value => value is null || value.Trim().Length <= maxLength))
+            .Must(LocalizedTexts.HasEnglishWhenTranslated)
+            .WithError(LocalizationErrors.MissingEnglishText);
 }

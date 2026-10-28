@@ -2,7 +2,7 @@ namespace FourPrep.Modules.Catalogue.Infrastructure.Universities;
 
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using FourPrep.Modules.Catalogue.Infrastructure.Json;
+using FourPrep.Common.Infrastructure.Data;
 using FourPrep.Modules.Catalogue.Domain.Universities;
 
 internal sealed class UniversityConfiguration : IEntityTypeConfiguration<University>

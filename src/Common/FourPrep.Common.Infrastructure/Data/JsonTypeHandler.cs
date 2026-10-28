@@ -1,10 +1,10 @@
-namespace FourPrep.Modules.Catalogue.Infrastructure.Json;
+namespace FourPrep.Common.Infrastructure.Data;
 
 using Dapper;
 using System.Data;
 using System.Text.Json;
 
-internal sealed class JsonTypeHandler<T> : SqlMapper.TypeHandler<T>
+public sealed class JsonTypeHandler<T> : SqlMapper.TypeHandler<T>
     where T : class, new()
 {
     public override void SetValue(IDbDataParameter parameter, T? value)

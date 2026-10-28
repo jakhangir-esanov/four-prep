@@ -12,10 +12,10 @@ public class DomainFolderTests : BaseTest
 
     [Theory]
     [MemberData(nameof(ModuleNames))]
-    public void DomainFolder_ShouldHold_OnlyItsAggregateErrorsAndRepository(string module)
+    public void DomainFolder_ShouldHold_OnlyItsAggregateErrorsRepositoryAndEnums(string module)
     {
         var offenders = DomainTypes(module)
-            .Where(type => !IsEntity(type) && !IsErrors(type) && !IsRepository(type))
+            .Where(type => !IsEntity(type) && !IsErrors(type) && !IsRepository(type) && !type.IsEnum)
             .Select(type => type.FullName)
             .ToList();
 

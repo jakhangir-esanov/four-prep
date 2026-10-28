@@ -9,7 +9,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.Extensions.DependencyInjection;
 using FourPrep.Modules.Catalogue.Domain.Programs;
 using FourPrep.Modules.Catalogue.Infrastructure.Csv;
-using FourPrep.Modules.Catalogue.Infrastructure.Json;
+using FourPrep.Common.Infrastructure.Data;
 using FourPrep.Modules.Catalogue.Application.Abstractions.Csv;
 using FourPrep.Modules.Catalogue.Domain.Destinations;
 using FourPrep.Modules.Catalogue.Domain.Universities;
@@ -51,7 +51,6 @@ public static class CatalogueModule
         services.AddScoped<IProgramRepository, ProgramRepository>();
         services.AddSingleton<ICsvReader, CsvFileReader>();
 
-        SqlMapper.AddTypeHandler(new JsonTypeHandler<Dictionary<string, string>>());
         SqlMapper.AddTypeHandler(new JsonTypeHandler<Dictionary<Exam, decimal>>());
     }
 }

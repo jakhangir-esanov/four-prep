@@ -49,7 +49,7 @@ Har bir modul o'z PostgreSQL sxemasiga ega va boshqa modulga faqat adapter orqal
 | Student | o'quvchi profili, ota-ona bog'lanishi, mentor; keyinroq o'quvchining bosqichi (stage) va yo'li, test ballari, shaxsiy hujjatlari va offboarding | profil, ota-ona va mentor tayyor |
 | Catalogue | universitetlar, dasturlar, qabul talablari, narxlar, muddatlar, grantlar, yo'nalish davlatlari | tayyor: qo'lda kiritish, CSV import, ochiq qidiruv |
 | Content | yangiliklar, natijalar (results), hamkorlar, About, xodimlarning ochiq profillari | skeleton |
-| Academy | kurslar, guruhlar, yozilish, davomat, mock ballar, placement test | skeleton |
+| Academy | kurslar, guruhlar, yozilish, davomat, mock ballar, placement test | kurslar va guruhlar tayyor (yozilishsiz) |
 | Admission | academy arizasi, universitetlarga arizalar, portal akkauntlari, essay, tavsiyanomalar, universitet offerlari, viza | skeleton |
 | Agreement | mahsulotlar, offer va chegirmalar, shartnomalar, imzolar | skeleton |
 | Payment | invoice, to'lovlar, to'lov tizimining webhook'i | skeleton |
@@ -125,7 +125,7 @@ Katalog AI Counselor va My Plan uchun yagona fakt manbasi: AI universitet haqida
 - **Yo'nalish (`field`) erkin matn.** `GET /majors` dasturlarda yozilgan yo'nalishlardan qidiradi. Standart klassifikator (masalan ISCED-F) keyin, ma'lumot ko'paygach ko'rib chiqiladi.
 - **Logo** hozircha yo'q: Storage moduli qurilgach, fayl id'si qo'shiladi.
 - **Takrorlar.** Bir o'quv yiliga ikkita narx, bir dasturda ikki bir xil raund yoki qabul mavsumi validator'da rad etiladi. Ichki jadvallarda unique indeks yo'q: ro'yxat almashtirilganda eski qatorlar o'chib, yangilari shu saqlashda yoziladi. Dastur nomi esa universitet ichida unique (`Program.NameTaken`, bazada ham indeks), chunki import dasturni universitet slug'i va nomi bilan topadi.
-- **jsonb o'qish.** `CatalogueModule` Dapper'ga `Dictionary<string, string>` va `Dictionary<Exam, decimal>` uchun JSON type handler qo'shadi. Dapper handler'lari butun jarayon uchun umumiy: boshqa modul shu turlarni Dapper bilan o'qisa, ular ham JSON deb o'qiladi.
+- **jsonb o'qish.** Ko'p tilli matn (`Dictionary<string, string>`) uchun Dapper JSON type handler'ini Common (`AddInfrastructure`) qo'shadi, chunki uni Academy ham ishlatadi. `CatalogueModule` faqat `Dictionary<Exam, decimal>` handler'ini qo'shadi. Dapper handler'lari butun jarayon uchun umumiy: boshqa modul shu turlarni Dapper bilan o'qisa, ular ham JSON deb o'qiladi.
 
 ### CSV import
 
@@ -144,6 +144,42 @@ Har bir jadval o'z faylida yuklanadi. Tartib: avval universitetlar, keyin dastur
 - **Qiymatlar.** Sana `YYYY-MM-DD`; sonlarda nuqta (`6.5`), vergul qabul qilinmaydi, shunda `6,5` jimgina `65` bo'lib qolmaydi; ha/yo'q `true`/`false`; enum'lar nomi bilan, katta-kichik harf farqi yo'q (`Bachelor`, `Fall`, `Required`, `NeedBased`); pul eng kichik birlikda (`tuition_minor`); `documents` nuqtali vergul bilan (`Transcript; CV`). Tarjima ustunlari `description_en`, `description_uz` ko'rinishida; yangi til uchun ustun qo'shish kifoya.
 - **Hammasi yoki hech narsa.** Avval butun fayl tekshiriladi: sarlavha (yo'q yoki noma'lum ustun), har bir qiymat, qo'lda kiritishdagi bilan bir xil validator qoidalari, fayl ichidagi takrorlar va bazada universitet/dastur borligi. Bitta xato bo'lsa ham hech narsa saqlanmaydi va `400` javobida hamma xatolar `rows[5].currency` yoki `columns.rank` ko'rinishida keladi. Qator raqami Excel'dagi qator raqami (sarlavha 1-qator). Xato bo'lmasa hamma o'zgarish bitta tranzaksiyada saqlanadi va javobda `rows`, `created`, `updated` (ichki ro'yxatlar uchun — ro'yxati almashtirilgan universitet yoki dasturlar soni) keladi.
 - **Nega validator handler ichida.** Boshqa buyruqlarda validator pipeline'da ishlaydi. Import buyrug'i esa faylni (`Stream`) olib keladi va qatorlar faqat fayl o'qilgandan keyin paydo bo'ladi, shuning uchun handler har bir qatorni o'sha validator'lar (`UniversityDetailsValidator`, `ReplaceUniversityCostsCommandValidator` va boshqalar) bilan tekshiradi. CSV'ni `ICsvReader` o'qiydi, uning CsvHelper'dagi amalga oshirilishi Infrastructure'da.
+
+## Kurslar va guruhlar (Academy)
+
+Academy 4Prep o'qitadigan kurslarni (Foundation Math, General English, SAT, IELTS va keyin qo'shiladiganlar) va ularning guruhlarini saqlaydi. Ommaviy `/courses` sahifasi shu ma'lumotdan quriladi. Yozilish (enrolment), davomat, mock ballar va placement test keyingi bosqichda qo'shiladi.
+
+**Tuzilishi.**
+
+| Aggregate | Ichidagilar | Nima |
+|---|---|---|
+| `Course` | — | kurs: manzil nomi (`slug`, masalan `sat`), uch tilda nomi va tavsifi |
+| `ClassGroup` | `ScheduleSlot` | kursning bitta guruhi: kodi, online yoki ofisda, boshlanish sanasi, necha hafta, o'rinlar soni, o'qituvchi, holati; haftalik dars jadvali |
+
+**Endpoint'lar.**
+
+- Ochiq, login talab qilmaydi, `RateLimitPolicies.PublicRead`:
+  - `GET /courses` — barcha kurslar va har birida nechta ochiq guruh borligi (`openGroupCount`).
+  - `GET /courses/{slug}` — bitta kurs.
+  - `GET /class-groups?course=&mode=&first=&rows=&sortField=&sortOrder=` — faqat `Open` holatidagi guruhlar, sahifada ko'pi bilan 100 ta (standart 20), standart saralash `starts_on`. `course` — kurs slug'i, `mode` — `1` online, `2` ofis.
+  - `GET /class-groups/{id}` — bitta ochiq guruh (yozilish sahifasi uchun). Ochiq bo'lmagan guruh `404` qaytaradi.
+- `mentor_admin` va `super_admin` (`Policies.CourseAdmin`):
+  - `POST /admin/courses`, `PUT` / `DELETE /admin/courses/{id}`. Guruhi bor kursni o'chirib bo'lmaydi (`409 Course.HasClassGroups`).
+  - `GET /admin/class-groups?course=&mode=&status=&teacherUserId=&search=` — barcha holatdagi guruhlar.
+  - `POST /admin/courses/{courseId}/class-groups`, `PUT` / `DELETE /admin/class-groups/{id}`.
+  - `PUT /admin/class-groups/{id}/status` `{ "status" }`.
+  - `PUT /admin/class-groups/{id}/teacher` `{ "teacherUserId", "teacherName" }`, `DELETE /admin/class-groups/{id}/teacher`.
+
+**Qoidalar va qarorlar.**
+
+- **Kim boshqaradi.** Kurs va guruhlarni `content_admin` emas, `mentor_admin` va `super_admin` boshqaradi: `content_admin` faqat yangiliklar va media bilan ishlaydi. Buning uchun alohida `Policies.CourseAdmin` bor. Buyurtmachi mentorlarga ham ruxsat berishni so'rasa, `AuthenticationExtensions` dagi shu policy'ga `Roles.Mentor` qo'shiladi.
+- **Guruh holati.** `Draft` (1) → `Open` (2) → `Closed` (3), istalgan holatdan → `Cancelled` (4); `Closed` guruhni qayta `Open` qilish mumkin. Boshqa o'tishlar `409 ClassGroup.InvalidStatusChange`. Yangi guruh `Draft` bo'lib yaratiladi, mehmonlarga faqat `Open` guruh ko'rinadi. Faqat `Draft` guruhni o'chirish mumkin (`ClassGroup.NotDraft`), e'lon qilingani bekor qilinadi. Bekor qilingan guruhni o'zgartirib bo'lmaydi.
+- **Jadval va vaqt zonasi.** Haftalik jadvalda har bir dars kun (`0` yakshanba ... `6` shanba), boshlanish vaqti (`"18:00:00"`) va davomiylik (15–240 daqiqa, o'sha kuni tugaydi) bilan saqlanadi. Darslar ustma-ust tushmaydi, haftasiga ko'pi bilan 14 ta. Vaqt guruhning o'z IANA vaqt zonasida (`timeZone`, masalan `Asia/Tashkent` yoki `America/New_York`) yoziladi, frontend uni foydalanuvchi zonasiga o'girib ko'rsatadi. Shunda yozgi vaqtga o'tilganda dars soati guruh shahrida siljimaydi.
+- **Ofis kodga yozilmagan.** Ofisdagi guruhda davlat (ISO kodi), shahar va manzil majburiy; spec'dagi "Toshkent ofisi" oddiy ma'lumot sifatida kiritiladi. Online guruhda manzil saqlanmaydi.
+- **O'qituvchi.** Faqat `teacher` rolidagi foydalanuvchi biriktiriladi: rol `FourPrep.Modules.Academy.Auth` adapteri orqali tekshiriladi (`ClassGroup.NotATeacher`). Auth hisoblarida ism-familiya yo'q, shuning uchun kartada ko'rinadigan ismni (`teacherName`) admin biriktirish paytida yozadi. Content'da xodimlarning ochiq profillari paydo bo'lgach, ism o'sha yerdan olinadi. Xodim hisobi o'chirilsa, guruhda uning id'si va ismi qolib ketadi; buni event mexanizmi qo'shilganda tozalaymiz.
+- **Narx hozircha yo'q.** Spec guruhga narx qo'yadi, lekin narx va to'lov shartnoma (Agreement) bilan birga qilinadi. Bo'sh o'rinlar soni ham yozilish qo'shilganda chiqadi, hozir faqat `capacity` bor.
+- **Guruh kodi** katta harflarga o'tkaziladi va butun tizimda unique (`SAT-2026-OCT`, `ClassGroup.CodeTaken`). Kurs slug'i ham unique (`Course.SlugTaken`).
+- **Ko'p tilli matn.** Kurs nomi va tavsifi, guruhning kirish darajasi (`entryLevel`) Catalogue'dagidek `{ "en", "uz", "ru" }` ko'rinishida `jsonb` ustunda saqlanadi. Kurs nomining inglizchasi majburiy (`Course.NameRequired`).
 
 ## Butun dunyodan foydalanuvchilar
 

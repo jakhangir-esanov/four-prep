@@ -31,6 +31,8 @@ public static class InfrastructureConfiguration
         services.AddHttpContextAccessor();
 
         SqlMapper.AddTypeHandler(new DateOnlyTypeHandler());
+        SqlMapper.AddTypeHandler(new TimeOnlyTypeHandler());
+        SqlMapper.AddTypeHandler(new JsonTypeHandler<Dictionary<string, string>>());
 
         return services;
     }
