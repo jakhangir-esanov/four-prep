@@ -75,7 +75,19 @@ internal sealed class FakeStudentRepository : IStudentRepository
     public Task<bool> IsLinkCodeTakenAsync(string linkCode, CancellationToken cancellationToken = default) =>
         Task.FromResult(Students.Any(x => x.LinkCode == linkCode));
 
+    public Task ClearMentorAsync(Guid mentorUserId, DateTime utcNow, CancellationToken cancellationToken = default)
+    {
+        foreach (var student in Students.Where(x => x.MentorUserId == mentorUserId))
+        {
+            student.RemoveMentor(utcNow);
+        }
+
+        return Task.CompletedTask;
+    }
+
     public void Insert(Student student) => Students.Add(student);
+
+    public void Remove(Student student) => Students.Remove(student);
 }
 
 internal sealed class FakeStudentParentRepository : IStudentParentRepository
@@ -91,6 +103,18 @@ internal sealed class FakeStudentParentRepository : IStudentParentRepository
     public void Insert(StudentParent studentParent) => Links.Add(studentParent);
 
     public void Remove(StudentParent studentParent) => Links.Remove(studentParent);
+
+    public Task RemoveAllByStudentIdAsync(Guid studentId, CancellationToken cancellationToken = default)
+    {
+        Links.RemoveAll(x => x.StudentId == studentId);
+        return Task.CompletedTask;
+    }
+
+    public Task RemoveAllByParentUserIdAsync(Guid parentUserId, CancellationToken cancellationToken = default)
+    {
+        Links.RemoveAll(x => x.ParentUserId == parentUserId);
+        return Task.CompletedTask;
+    }
 }
 
 internal sealed class FakeAuthService : IAuthService

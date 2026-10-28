@@ -101,6 +101,15 @@ public class RegisterCommandValidatorTests
         Assert.Equal(LocalizationErrors.InvalidPhoneNumber.Code, error.ErrorCode);
     }
 
+    [Fact]
+    public void Validate_WhenThePasswordIsTheUsername_FailsWithPasswordNotAllowed()
+    {
+        var error = Assert.Single(Validator.Validate(Command("ali12345") with { Password = "ALI12345" }).Errors);
+
+        Assert.Equal(nameof(RegisterCommand.Password), error.PropertyName);
+        Assert.Equal(UserErrors.PasswordNotAllowed.Code, error.ErrorCode);
+    }
+
     private static RegisterCommand Command(string username) =>
         new(username, "user@example.com", "+967771234567", "Passw0rd!23", "YE", "Asia/Aden", "en", Roles.Student);
 }

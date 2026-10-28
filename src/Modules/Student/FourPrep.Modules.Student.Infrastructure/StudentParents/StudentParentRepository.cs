@@ -30,4 +30,16 @@ internal sealed class StudentParentRepository(StudentDbContext dbContext) : IStu
     {
         dbContext.StudentParents.Remove(studentParent);
     }
+
+    public async Task RemoveAllByStudentIdAsync(Guid studentId, CancellationToken cancellationToken = default)
+    {
+        dbContext.StudentParents.RemoveRange(
+            await dbContext.StudentParents.Where(x => x.StudentId == studentId).ToListAsync(cancellationToken));
+    }
+
+    public async Task RemoveAllByParentUserIdAsync(Guid parentUserId, CancellationToken cancellationToken = default)
+    {
+        dbContext.StudentParents.RemoveRange(
+            await dbContext.StudentParents.Where(x => x.ParentUserId == parentUserId).ToListAsync(cancellationToken));
+    }
 }

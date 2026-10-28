@@ -27,6 +27,7 @@ internal sealed partial class KeycloakAdminClient(
     private const string AdminUserCountUrlTemplate = "admin/realms/{0}/users/count";
     private const string AdminUserLogoutUrlTemplate = "admin/realms/{0}/users/{1}/logout";
     private const string AdminUserPasswordUrlTemplate = "admin/realms/{0}/users/{1}/reset-password";
+    private const string AdminUserCredentialsUrlTemplate = "admin/realms/{0}/users/{1}/credentials";
     private const string AdminUserVerifyEmailUrlTemplate = "admin/realms/{0}/users/{1}/send-verify-email";
     private const string AdminUserActionsEmailUrlTemplate = "admin/realms/{0}/users/{1}/execute-actions-email";
     private const string AdminUserRealmRolesUrlTemplate = "admin/realms/{0}/users/{1}/role-mappings/realm";
@@ -72,6 +73,9 @@ internal sealed partial class KeycloakAdminClient(
     private const string ConflictKeyword = "exists";
     private const string ErrorMessageField = "errorMessage";
     private const string ErrorFieldName = "field";
+    private const string ErrorCodeField = "error";
+    private const string InvalidPasswordErrorPrefix = "invalidPassword";
+    private const string CredentialTypeField = "type";
     private const string UsernameConflictMessage = "User exists with same username";
     private const string EmailConflictMessage = "User exists with same email";
 
@@ -386,6 +390,26 @@ internal sealed partial class KeycloakAdminClient(
             : Result.Failure(ToUserError(await MapErrorAsync(response, cancellationToken)));
     }
 
+    public async Task<Result<bool>> HasPasswordAsync(
+        Guid userId,
+        CancellationToken cancellationToken = default)
+    {
+        var credentials = await GetAdminJsonAsync<JArray>(BuildUserCredentialsUrl(userId), cancellationToken);
+
+        return credentials.IsSuccess
+            ? credentials.Data.Any(credential => credential.Value<string>(CredentialTypeField) == PasswordCredentialType)
+            : Result.Failure<bool>(ToUserError(credentials.Error));
+    }
+
+    public string? ReadSessionId(string token)
+    {
+        var handler = new JwtSecurityTokenHandler();
+
+        return handler.CanReadToken(token)
+            ? handler.ReadJwtToken(token).Claims.FirstOrDefault(claim => claim.Type == SessionIdClaim)?.Value
+            : null;
+    }
+
     public async Task<Result> SetUserPasswordAsync(
         Guid userId,
         string password,
@@ -598,6 +622,9 @@ internal sealed partial class KeycloakAdminClient(
     private string BuildUserPasswordUrl(Guid userId) =>
         string.Format(AdminUserPasswordUrlTemplate, _options.Realm, userId);
 
+    private string BuildUserCredentialsUrl(Guid userId) =>
+        string.Format(AdminUserCredentialsUrlTemplate, _options.Realm, userId);
+
     private string BuildUserVerifyEmailUrl(Guid userId) =>
         string.Format(AdminUserVerifyEmailUrlTemplate, _options.Realm, userId);
 
@@ -748,6 +775,12 @@ internal sealed partial class KeycloakAdminClient(
             errorBody?.Value<string>(ErrorFieldName) == UsernameField)
         {
             return UserErrors.InvalidUsername;
+        }
+
+        if (response.StatusCode == HttpStatusCode.BadRequest &&
+            errorBody?.Value<string>(ErrorCodeField)?.StartsWith(InvalidPasswordErrorPrefix, StringComparison.Ordinal) == true)
+        {
+            return UserErrors.PasswordNotAllowed;
         }
 
         logger.LogWarning(

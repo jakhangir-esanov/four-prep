@@ -1,6 +1,5 @@
 namespace FourPrep.Modules.Auth.UnitTests.Authentication;
 
-using FluentAssertions;
 using FourPrep.Common.Domain;
 using FourPrep.Modules.Auth.Domain.UserSessions;
 using FourPrep.Modules.Auth.Domain.Authentication;
@@ -23,27 +22,26 @@ public class RefreshCommandHandlerTests
 
         var result = await Handler(Identity(), sessions, unitOfWork).Handle(new RefreshCommand("old-refresh"), default);
 
-        result.IsSuccess.Should().BeTrue();
-        result.Data.AccessToken.Should().Be("new-access");
-        sessions.Inserted.Should().ContainSingle();
-        session.AccessTokenHash.Should().Be(AccessTokenHash.Of("new-access"));
-        session.ExpiresOnUtc.Should().Be(NewExpiry);
-        session.RefreshedOnUtc.Should().Be(new FakeClock().UtcNow);
-        unitOfWork.SaveCount.Should().Be(1);
+        Assert.True(result.IsSuccess);
+        Assert.Equal("new-access", result.Data.AccessToken);
+        Assert.Single(sessions.Inserted);
+        Assert.Equal(AccessTokenHash.Of("new-access"), session.AccessTokenHash);
+        Assert.Equal(NewExpiry, session.ExpiresOnUtc);
+        Assert.Equal(new FakeClock().UtcNow, session.RefreshedOnUtc);
+        Assert.Equal(1, unitOfWork.SaveCount);
     }
 
     [Fact]
-    public async Task Handle_StartsARecordWhenNoneMatchesTheKeycloakSession()
+    public async Task Handle_DoesNotStartARecordThatWouldPassForAFreshSignIn()
     {
         var sessions = new FakeUserSessionRepository();
+        var unitOfWork = new FakeUnitOfWork();
 
-        await Handler(Identity(), sessions, new FakeUnitOfWork()).Handle(new RefreshCommand("old-refresh"), default);
+        var result = await Handler(Identity(), sessions, unitOfWork).Handle(new RefreshCommand("old-refresh"), default);
 
-        var session = sessions.Inserted.Should().ContainSingle().Subject;
-        session.UserId.Should().Be(UserId);
-        session.IdentitySessionId.Should().Be(SessionId);
-        session.AccessTokenHash.Should().Be(AccessTokenHash.Of("new-access"));
-        session.RefreshedOnUtc.Should().BeNull();
+        Assert.True(result.IsSuccess);
+        Assert.Empty(sessions.Inserted);
+        Assert.Equal(0, unitOfWork.SaveCount);
     }
 
     [Fact]
@@ -57,10 +55,10 @@ public class RefreshCommandHandlerTests
 
         var result = await Handler(identity, sessions, unitOfWork).Handle(new RefreshCommand("old-refresh"), default);
 
-        result.Error.Should().Be(AuthenticationErrors.InvalidRefreshToken);
-        identity.LoggedOutRefreshTokens.Should().Equal("new-refresh");
-        session.AccessTokenHash.Should().Be("old-hash");
-        unitOfWork.SaveCount.Should().Be(0);
+        Assert.Equal(AuthenticationErrors.InvalidRefreshToken, result.Error);
+        Assert.Equal("new-refresh", Assert.Single(identity.LoggedOutRefreshTokens));
+        Assert.Equal("old-hash", session.AccessTokenHash);
+        Assert.Equal(0, unitOfWork.SaveCount);
     }
 
     [Fact]
@@ -72,9 +70,9 @@ public class RefreshCommandHandlerTests
         var result = await Handler(new FakeIdentityProviderClient(), sessions, unitOfWork)
             .Handle(new RefreshCommand("expired"), default);
 
-        result.Error.Should().Be(AuthenticationErrors.InvalidRefreshToken);
-        sessions.Inserted.Should().BeEmpty();
-        unitOfWork.SaveCount.Should().Be(0);
+        Assert.Equal(AuthenticationErrors.InvalidRefreshToken, result.Error);
+        Assert.Empty(sessions.Inserted);
+        Assert.Equal(0, unitOfWork.SaveCount);
     }
 
     private static FakeIdentityProviderClient Identity() =>

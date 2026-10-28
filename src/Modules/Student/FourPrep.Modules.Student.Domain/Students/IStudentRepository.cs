@@ -10,5 +10,9 @@ public interface IStudentRepository
 
     Task<bool> IsLinkCodeTakenAsync(string linkCode, CancellationToken cancellationToken = default);
 
+    Task ClearMentorAsync(Guid mentorUserId, DateTime utcNow, CancellationToken cancellationToken = default);
+
     void Insert(Student student);
+
+    void Remove(Student student);
 }

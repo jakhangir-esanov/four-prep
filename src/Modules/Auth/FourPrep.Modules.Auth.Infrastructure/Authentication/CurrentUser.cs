@@ -8,4 +8,6 @@ internal sealed class CurrentUser(IHttpContextAccessor httpContextAccessor) : IC
 {
     public Guid UserId => httpContextAccessor.HttpContext?.User.GetUserId() ??
                           throw new ApplicationException("User identifier is unavailable");
+
+    public string? SessionId => httpContextAccessor.HttpContext?.User.GetSessionIdOrNull();
 }

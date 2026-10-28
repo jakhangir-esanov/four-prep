@@ -26,8 +26,28 @@ internal sealed class StudentRepository(StudentDbContext dbContext) : IStudentRe
         return await dbContext.Students.AnyAsync(x => x.LinkCode == linkCode, cancellationToken);
     }
 
+    public async Task ClearMentorAsync(
+        Guid mentorUserId,
+        DateTime utcNow,
+        CancellationToken cancellationToken = default)
+    {
+        var mentees = await dbContext.Students
+            .Where(x => x.MentorUserId == mentorUserId)
+            .ToListAsync(cancellationToken);
+
+        foreach (var student in mentees)
+        {
+            student.RemoveMentor(utcNow);
+        }
+    }
+
     public void Insert(Student student)
     {
         dbContext.Students.Add(student);
+    }
+
+    public void Remove(Student student)
+    {
+        dbContext.Students.Remove(student);
     }
 }

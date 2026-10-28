@@ -81,12 +81,6 @@ internal sealed class RegisterCommandHandler(
         sessionRepository.Insert(session);
         await unitOfWork.SaveChangesAsync(cancellationToken);
 
-        return new AuthTokenResponse(
-            loginResult.Data.AccessToken,
-            loginResult.Data.RefreshToken,
-            loginResult.Data.IdToken,
-            loginResult.Data.TokenType,
-            loginResult.Data.ExpiresIn,
-            loginResult.Data.RefreshExpiresIn);
+        return AuthTokenResponse.From(loginResult.Data);
     }
 }

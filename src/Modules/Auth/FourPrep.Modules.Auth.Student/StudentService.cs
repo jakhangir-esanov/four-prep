@@ -4,6 +4,7 @@ using MediatR;
 using FourPrep.Common.Domain;
 using FourPrep.Modules.Auth.Application.Abstractions.Students;
 using FourPrep.Modules.Student.Application.Students.CreateStudent;
+using FourPrep.Modules.Student.Application.Students.EraseUserData;
 
 public sealed class StudentService(ISender sender) : IStudentService
 {
@@ -14,5 +15,10 @@ public sealed class StudentService(ISender sender) : IStudentService
         CancellationToken cancellationToken = default)
     {
         return await sender.Send(new CreateStudentCommand(userId, userName, country), cancellationToken);
+    }
+
+    public async Task<Result> EraseUserDataAsync(Guid userId, CancellationToken cancellationToken = default)
+    {
+        return await sender.Send(new EraseUserDataCommand(userId), cancellationToken);
     }
 }

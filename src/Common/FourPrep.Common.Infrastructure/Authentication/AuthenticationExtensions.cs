@@ -9,6 +9,8 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 
 internal static class AuthenticationExtensions
 {
+    private const string VerifiedEmailClaimValue = "true";
+
     internal static IServiceCollection AddAuthenticationInternal(this IServiceCollection services)
     {
         services
@@ -22,6 +24,12 @@ internal static class AuthenticationExtensions
             .AddPolicy(Policies.Parent, policy => policy
                 .RequireAuthenticatedUser()
                 .RequireRole(Roles.Parent))
+            .AddPolicy(Policies.StudentOrParent, policy => policy
+                .RequireAuthenticatedUser()
+                .RequireRole(Roles.Student, Roles.Parent))
+            .AddPolicy(Policies.VerifiedEmail, policy => policy
+                .RequireAuthenticatedUser()
+                .RequireClaim(CustomClaims.EmailVerified, VerifiedEmailClaimValue))
             .AddPolicy(Policies.Staff, policy => policy
                 .RequireAuthenticatedUser()
                 .RequireRole(Roles.Mentor, Roles.Teacher, Roles.MentorAdmin, Roles.ContentAdmin, Roles.SuperAdmin))

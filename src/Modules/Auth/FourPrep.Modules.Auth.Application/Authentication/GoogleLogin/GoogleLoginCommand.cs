@@ -51,13 +51,7 @@ internal sealed class GoogleLoginCommandHandler(
         sessionRepository.Insert(session);
         await unitOfWork.SaveChangesAsync(cancellationToken);
 
-        return new AuthTokenResponse(
-            tokens.Data.AccessToken,
-            tokens.Data.RefreshToken,
-            tokens.Data.IdToken,
-            tokens.Data.TokenType,
-            tokens.Data.ExpiresIn,
-            tokens.Data.RefreshExpiresIn);
+        return AuthTokenResponse.From(tokens.Data);
     }
 
     private async Task<Result<IdentityTokenResult>> EnsureSignedUpAsync(

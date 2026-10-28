@@ -9,4 +9,6 @@ public interface IStudentService
         string userName,
         string? country,
         CancellationToken cancellationToken = default);
+
+    Task<Result> EraseUserDataAsync(Guid userId, CancellationToken cancellationToken = default);
 }

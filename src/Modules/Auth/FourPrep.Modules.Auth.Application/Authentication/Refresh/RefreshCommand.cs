@@ -34,31 +34,13 @@ internal sealed class RefreshCommandHandler(
             return Result.Failure<AuthTokenResponse>(AuthenticationErrors.InvalidRefreshToken);
         }
 
-        string accessTokenHash = AccessTokenHash.Of(tokens.AccessToken);
-
-        if (session is null)
+        if (session is not null)
         {
-            sessionRepository.Insert(UserSession.Create(
-                tokens.UserId,
-                tokens.SessionId,
-                accessTokenHash,
-                tokens.ExpiresAt,
-                dateTimeProvider.UtcNow));
-        }
-        else
-        {
-            session.Refresh(accessTokenHash, tokens.ExpiresAt, dateTimeProvider.UtcNow);
+            session.Refresh(AccessTokenHash.Of(tokens.AccessToken), tokens.ExpiresAt, dateTimeProvider.UtcNow);
+            await unitOfWork.SaveChangesAsync(cancellationToken);
         }
 
-        await unitOfWork.SaveChangesAsync(cancellationToken);
-
-        return new AuthTokenResponse(
-            tokens.AccessToken,
-            tokens.RefreshToken,
-            tokens.IdToken,
-            tokens.TokenType,
-            tokens.ExpiresIn,
-            tokens.RefreshExpiresIn);
+        return AuthTokenResponse.From(tokens);
     }
 
     private async Task<UserSession?> FindSessionAsync(IdentityTokenResult tokens, CancellationToken cancellationToken) =>

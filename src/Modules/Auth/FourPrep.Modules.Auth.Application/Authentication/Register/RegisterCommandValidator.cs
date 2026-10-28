@@ -19,6 +19,9 @@ internal sealed class RegisterCommandValidator : AbstractValidator<RegisterComma
         RuleFor(x => x.Email).NotEmpty().EmailAddress().MaximumLength(320);
         RuleFor(x => x.PhoneNumber).PhoneNumber();
         RuleFor(x => x.Password).NotEmpty().MinimumLength(8).MaximumLength(128);
+        RuleFor(x => x.Password)
+            .Must((command, password) => !string.Equals(password, command.Username, StringComparison.OrdinalIgnoreCase))
+            .WithError(UserErrors.PasswordNotAllowed);
         RuleFor(x => x.Country).NotEmpty().CountryCode();
         RuleFor(x => x.TimeZone).TimeZoneId();
         RuleFor(x => x.Locale).Locale();

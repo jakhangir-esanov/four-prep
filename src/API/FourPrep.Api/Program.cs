@@ -63,10 +63,13 @@ builder.Services.AddAdmissionModule(builder.Configuration);
 
 builder.Services.AddCorsPolicy(builder.Configuration);
 builder.Services.AddRateLimitPolicies();
+builder.Services.AddTrustedProxies(builder.Configuration);
 
 var app = builder.Build();
 
 await app.InitializeDatabaseAsync();
+
+app.UseForwardedHeaders();
 
 app.UseSwaggerDocumentation();
 

@@ -12,6 +12,7 @@ using Microsoft.Extensions.DependencyInjection;
 using FourPrep.Common.Infrastructure.Configuration;
 using FourPrep.Modules.Auth.Student;
 using FourPrep.Modules.Auth.Infrastructure.Database;
+using FourPrep.Modules.Auth.Infrastructure.Jobs;
 using FourPrep.Modules.Auth.Infrastructure.Identity;
 using FourPrep.Modules.Auth.Infrastructure.UserSessions;
 using FourPrep.Modules.Auth.Infrastructure.Authentication;
@@ -57,5 +58,8 @@ public static class AuthModule
                 options.UseNpgsqlConnection(configuration.GetConnectionStringOrThrow("Database"))));
 
         services.AddHangfireServer();
+
+        services.AddScoped<PurgeExpiredSessionsJob>();
+        services.AddHostedService<RecurringJobsRegistration>();
     }
 }

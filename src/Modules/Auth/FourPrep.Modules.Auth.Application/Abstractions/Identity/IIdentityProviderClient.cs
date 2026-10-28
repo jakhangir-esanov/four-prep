@@ -81,6 +81,12 @@ public interface IIdentityProviderClient
         Guid userId,
         CancellationToken cancellationToken = default);
 
+    Task<Result<bool>> HasPasswordAsync(
+        Guid userId,
+        CancellationToken cancellationToken = default);
+
+    string? ReadSessionId(string token);
+
     Task<Result> SetUserPasswordAsync(
         Guid userId,
         string password,

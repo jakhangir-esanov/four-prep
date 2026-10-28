@@ -19,9 +19,11 @@ internal sealed class FakeClock : IDateTimeProvider
     public DateTime UtcNow { get; } = new(2026, 9, 18, 12, 0, 0, DateTimeKind.Utc);
 }
 
-internal sealed class FakeCurrentUser(Guid userId) : ICurrentUser
+internal sealed class FakeCurrentUser(Guid userId, string? sessionId = null) : ICurrentUser
 {
     public Guid UserId { get; } = userId;
+
+    public string? SessionId { get; } = sessionId;
 }
 
 internal sealed class FakeUnitOfWork : IUnitOfWork
@@ -53,6 +55,15 @@ internal sealed class FakeUserSessionRepository : IUserSessionRepository
 
     public void Insert(UserSession userSession) => Inserted.Add(userSession);
 
+    public Task RemoveAllByUserIdAsync(Guid userId, CancellationToken cancellationToken = default)
+    {
+        Inserted.RemoveAll(session => session.UserId == userId);
+        return Task.CompletedTask;
+    }
+
+    public Task<int> DeleteExpiredBeforeAsync(DateTime expiredBeforeUtc, CancellationToken cancellationToken = default) =>
+        Task.FromResult(Inserted.RemoveAll(session => session.ExpiresOnUtc < expiredBeforeUtc));
+
     public Task RevokeAllByUserIdAsync(Guid userId, DateTime revokedOnUtc, CancellationToken cancellationToken = default)
     {
         RevokedUserIds.Add(userId);
@@ -70,7 +81,22 @@ internal sealed class FakeStudentService : IStudentService
 {
     public List<(Guid UserId, string UserName, string? Country)> Created { get; } = [];
 
+    public List<Guid> ErasedUserIds { get; } = [];
+
     public Error? CreateFailure { get; init; }
+
+    public Error? EraseFailure { get; init; }
+
+    public Task<Result> EraseUserDataAsync(Guid userId, CancellationToken cancellationToken = default)
+    {
+        if (EraseFailure is not null)
+        {
+            return Task.FromResult(Result.Failure(EraseFailure));
+        }
+
+        ErasedUserIds.Add(userId);
+        return Task.FromResult(Result.Success());
+    }
 
     public Task<Result<Guid>> CreateStudentAsync(
         Guid userId, string userName, string? country, CancellationToken cancellationToken = default)
@@ -98,6 +124,12 @@ internal sealed class FakeIdentityProviderClient : IIdentityProviderClient
     public List<string> LoggedOutRefreshTokens { get; } = [];
 
     public Dictionary<Guid, string> Passwords { get; } = [];
+
+    public Dictionary<string, string> SessionIdsByToken { get; } = [];
+
+    public Error? SetPasswordFailure { get; init; }
+
+    public Error? LogoutFailure { get; init; }
 
     public List<Guid> VerificationEmails { get; } = [];
 
@@ -189,8 +221,21 @@ internal sealed class FakeIdentityProviderClient : IIdentityProviderClient
             : Result.Failure(IdentityProviderErrors.UserNotFound));
     }
 
+    public Task<Result<bool>> HasPasswordAsync(Guid userId, CancellationToken cancellationToken = default) =>
+        Task.FromResult(Users.ContainsKey(userId)
+            ? Result.Success(Passwords.ContainsKey(userId))
+            : Result.Failure<bool>(UserErrors.NotFound));
+
+    public string? ReadSessionId(string token) =>
+        SessionIdsByToken.GetValueOrDefault(token);
+
     public Task<Result> SetUserPasswordAsync(Guid userId, string password, CancellationToken cancellationToken = default)
     {
+        if (SetPasswordFailure is not null)
+        {
+            return Task.FromResult(Result.Failure(SetPasswordFailure));
+        }
+
         if (!Users.ContainsKey(userId))
         {
             return Task.FromResult(Result.Failure(UserErrors.NotFound));
@@ -201,8 +246,20 @@ internal sealed class FakeIdentityProviderClient : IIdentityProviderClient
     }
 
     public Task<Result<IdentityTokenResult>> LoginAsync(
-        string username, string password, CancellationToken cancellationToken = default) =>
-        Task.FromResult(LoginResult);
+        string username, string password, CancellationToken cancellationToken = default)
+    {
+        var user = Users.Values.FirstOrDefault(user => user.UserName == username);
+        if (user is null || !Passwords.TryGetValue(user.Id, out string? stored))
+        {
+            return Task.FromResult(LoginResult);
+        }
+
+        return Task.FromResult(stored == password
+            ? Result.Success(new IdentityTokenResult(
+                $"access-{password}", $"refresh-{password}", null, "Bearer", 1800, 2592000, user.Id,
+                new DateTime(2026, 9, 18, 12, 30, 0, DateTimeKind.Utc), $"sid-{password}"))
+            : Result.Failure<IdentityTokenResult>(AuthenticationErrors.InvalidCredentials));
+    }
 
     public Task<Result<IdentityTokenResult>> LoginWithGoogleAsync(
         string idToken, CancellationToken cancellationToken = default) =>
@@ -214,6 +271,11 @@ internal sealed class FakeIdentityProviderClient : IIdentityProviderClient
 
     public Task<Result> LogoutAsync(string refreshToken, CancellationToken cancellationToken = default)
     {
+        if (LogoutFailure is not null)
+        {
+            return Task.FromResult(Result.Failure(LogoutFailure));
+        }
+
         LoggedOutRefreshTokens.Add(refreshToken);
         return Task.FromResult(Result.Success());
     }

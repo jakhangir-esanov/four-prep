@@ -1,6 +1,5 @@
 namespace FourPrep.Modules.Auth.UnitTests.Authentication;
 
-using FluentAssertions;
 using FourPrep.Modules.Auth.Domain.UserSessions;
 using FourPrep.Modules.Auth.Domain.IdentityProvider;
 using FourPrep.Modules.Auth.Application.Authentication.LogoutAll;
@@ -19,11 +18,11 @@ public class LogoutAllCommandHandlerTests
 
         var result = await Handler(identity, sessions, unitOfWork).Handle(new LogoutAllCommand(), default);
 
-        result.IsSuccess.Should().BeTrue();
-        identity.LoggedOutUserIds.Should().Equal(UserId);
-        session.IsRevoked.Should().BeTrue();
-        session.RevokedOnUtc.Should().Be(new FakeClock().UtcNow);
-        unitOfWork.SaveCount.Should().Be(1);
+        Assert.True(result.IsSuccess);
+        Assert.Equal(UserId, Assert.Single(identity.LoggedOutUserIds));
+        Assert.True(session.IsRevoked);
+        Assert.Equal(new FakeClock().UtcNow, session.RevokedOnUtc);
+        Assert.Equal(1, unitOfWork.SaveCount);
     }
 
     [Fact]
@@ -36,9 +35,9 @@ public class LogoutAllCommandHandlerTests
 
         var result = await Handler(identity, sessions, unitOfWork).Handle(new LogoutAllCommand(), default);
 
-        result.Error.Should().Be(IdentityProviderErrors.OperationFailed);
-        session.IsRevoked.Should().BeFalse();
-        unitOfWork.SaveCount.Should().Be(0);
+        Assert.Equal(IdentityProviderErrors.OperationFailed, result.Error);
+        Assert.False(session.IsRevoked);
+        Assert.Equal(0, unitOfWork.SaveCount);
     }
 
     private static UserSession Session(FakeUserSessionRepository sessions)

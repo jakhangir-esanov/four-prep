@@ -9,4 +9,8 @@ public interface IStudentParentRepository
     void Insert(StudentParent studentParent);
 
     void Remove(StudentParent studentParent);
+
+    Task RemoveAllByStudentIdAsync(Guid studentId, CancellationToken cancellationToken = default);
+
+    Task RemoveAllByParentUserIdAsync(Guid parentUserId, CancellationToken cancellationToken = default);
 }

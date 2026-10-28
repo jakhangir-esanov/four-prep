@@ -26,6 +26,21 @@ internal sealed class UserSessionRepository(AuthDbContext dbContext) : IUserSess
         dbContext.UserSessions.Add(userSession);
     }
 
+    public async Task RemoveAllByUserIdAsync(Guid userId, CancellationToken cancellationToken = default)
+    {
+        dbContext.UserSessions.RemoveRange(
+            await dbContext.UserSessions.Where(x => x.UserId == userId).ToListAsync(cancellationToken));
+    }
+
+    public async Task<int> DeleteExpiredBeforeAsync(
+        DateTime expiredBeforeUtc,
+        CancellationToken cancellationToken = default)
+    {
+        return await dbContext.UserSessions
+            .Where(x => x.ExpiresOnUtc < expiredBeforeUtc)
+            .ExecuteDeleteAsync(cancellationToken);
+    }
+
     public async Task RevokeAllByUserIdAsync(
         Guid userId,
         DateTime revokedOnUtc,

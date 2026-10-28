@@ -30,4 +30,7 @@ public static class ClaimsPrincipalExtensions
 
     public static string? GetTimeZoneOrNull(this ClaimsPrincipal? principal) =>
         principal?.FindFirst(CustomClaims.ZoneInfo)?.Value;
+
+    public static string? GetSessionIdOrNull(this ClaimsPrincipal? principal) =>
+        principal?.FindFirst(CustomClaims.SessionId)?.Value;
 }
