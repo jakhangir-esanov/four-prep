@@ -1,0 +1,14 @@
+{
+  "identities": [
+    {
+      "name": "fourprep-api",
+      "credentials": [
+        {
+          "accessKey": "fourprep-dev",
+          "secretKey": "fourprep-dev-storage-secret"
+        }
+      ],
+      "actions": ["Read", "Write", "List", "Tagging"]
+    }
+  ]
+}

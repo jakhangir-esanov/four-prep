@@ -29,3 +29,28 @@ services:
     ports:
       - '1025:1025'
       - '8025:8025'
+
+  # Local S3-compatible object storage for uploaded files (Hetzner Object Storage in production).
+  # MinIO no longer publishes community images, so SeaweedFS's S3 gateway stands in locally.
+  seaweedfs:
+    image: chrislusf/seaweedfs:3.85
+    container_name: fourprep-storage
+    command: server -dir=/data -s3 -s3.port=8333 -s3.config=/etc/seaweedfs/s3.json -s3.allowedOrigins=http://localhost:4200
+    ports:
+      - '127.0.0.1:8333:8333'
+    volumes:
+      - ./seaweedfs/s3.json:/etc/seaweedfs/s3.json:ro
+      - seaweedfs-data:/data
+
+  # Creates the private documents bucket once SeaweedFS is up; harmless if it already exists.
+  seaweedfs-buckets:
+    image: chrislusf/seaweedfs:3.85
+    container_name: fourprep-storage-buckets
+    entrypoint: /bin/sh
+    command: -c "until echo 's3.bucket.create -name fourprep-documents' | weed shell -master=seaweedfs:9333 -filer=seaweedfs:8888 2>&1 | grep -q 'created bucket'; do sleep 3; done"
+    depends_on:
+      - seaweedfs
+    restart: 'no'
+
+volumes:
+  seaweedfs-data:

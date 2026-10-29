@@ -5,4 +5,7 @@
     <ProjectReference Include="..\FourPrep.Modules.Storage.Application\FourPrep.Modules.Storage.Application.csproj" />
     <ProjectReference Include="..\FourPrep.Modules.Storage.Presentation\FourPrep.Modules.Storage.Presentation.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="AWSSDK.S3" Version="4.0.104.7" />
+  </ItemGroup>
 </Project>

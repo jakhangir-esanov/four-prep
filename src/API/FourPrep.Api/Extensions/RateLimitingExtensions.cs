@@ -1,6 +1,7 @@
 namespace FourPrep.Api.Extensions;
 
 using System.Threading.RateLimiting;
+using FourPrep.Common.Infrastructure.Authentication;
 using FourPrep.Common.Presentation.RateLimiting;
 
 internal static class RateLimitingExtensions
@@ -8,8 +9,10 @@ internal static class RateLimitingExtensions
     private const string UnknownClient = "unknown";
     private const int EmailPermitLimit = 5;
     private const int PublicReadPermitLimit = 120;
+    private const int FileUploadPermitLimit = 20;
     private static readonly TimeSpan EmailWindow = TimeSpan.FromMinutes(15);
     private static readonly TimeSpan PublicReadWindow = TimeSpan.FromMinutes(1);
+    private static readonly TimeSpan FileUploadWindow = TimeSpan.FromMinutes(1);
 
     public static IServiceCollection AddRateLimitPolicies(this IServiceCollection services)
     {
@@ -22,6 +25,12 @@ internal static class RateLimitingExtensions
 
             options.AddPolicy(RateLimitPolicies.PublicRead, httpContext =>
                 FixedWindowPerClient(httpContext, PublicReadPermitLimit, PublicReadWindow));
+
+            options.AddPolicy(RateLimitPolicies.FileUpload, httpContext =>
+                FixedWindow(
+                    httpContext.User.GetUserIdOrNull()?.ToString() ?? ClientAddress(httpContext),
+                    FileUploadPermitLimit,
+                    FileUploadWindow));
         });
     }
 
@@ -29,8 +38,17 @@ internal static class RateLimitingExtensions
         HttpContext httpContext,
         int permitLimit,
         TimeSpan window) =>
+        FixedWindow(ClientAddress(httpContext), permitLimit, window);
+
+    private static string ClientAddress(HttpContext httpContext) =>
+        httpContext.Connection.RemoteIpAddress?.ToString() ?? UnknownClient;
+
+    private static RateLimitPartition<string> FixedWindow(
+        string partitionKey,
+        int permitLimit,
+        TimeSpan window) =>
         RateLimitPartition.GetFixedWindowLimiter(
-            httpContext.Connection.RemoteIpAddress?.ToString() ?? UnknownClient,
+            partitionKey,
             _ => new FixedWindowRateLimiterOptions
             {
                 PermitLimit = permitLimit,

@@ -10,7 +10,7 @@ Kerak bo'ladi: .NET 10 SDK, Docker va `localhost:5432` da ishlab turgan PostgreS
    psql -h localhost -U postgres -c "CREATE DATABASE fourprep_keycloak"
    ```
 
-2. Keycloak va Mailpit'ni ishga tushiring:
+2. Keycloak, Mailpit va fayl omborini (SeaweedFS) ishga tushiring:
 
    ```bash
    docker compose up -d --build
@@ -36,6 +36,7 @@ Kerak bo'ladi: .NET 10 SDK, Docker va `localhost:5432` da ishlab turgan PostgreS
 | `super_admin` foydalanuvchi | `superadmin` / `superadmin` |
 | `fourprep-api` client secret | `fourprep-dev-secret` |
 | Mailpit (yuborilgan xatlar) | http://localhost:8025 |
+| Fayl ombori (SeaweedFS S3) | http://localhost:8333, `fourprep-dev` / `fourprep-dev-storage-secret`, bucket `fourprep-documents` |
 
 Bu qiymatlarni prod'da ishlatmang.
 
@@ -57,7 +58,7 @@ Har bir modul o'z PostgreSQL sxemasiga ega va boshqa modulga faqat adapter orqal
 | AI | AI Counselor, plan wizard va My Plan, haftalik check-in | skeleton |
 | Chat | suhbatlar va xabarlar | skeleton |
 | Notification | ilova ichidagi, email va Telegram bildirishnomalari | skeleton |
-| Storage | faqat fayl baytlari: obyektlar, yuklash va yuklab olish uchun imzolangan havolalar, o'chirish | skeleton |
+| Storage | faqat fayl baytlari: obyektlar, yuklash va yuklab olish uchun imzolangan havolalar, o'chirish | tayyor: yuklash, tasdiqlash, yuklab olish (virus tekshiruvisiz) |
 | Audit | barcha modullardagi muhim amallarning faqat qo'shiladigan (append-only) jurnali; hech qachon o'chirilmaydi | skeleton |
 
 Nega shunday bo'lindi:
@@ -207,6 +208,30 @@ O'quvchi o'zini, ota-ona esa hisobiga bog'langan farzandini `Open` guruhga yozad
 - **Bir vaqtdagi so'rovlar.** Yozilishlar `ClassGroup` aggregate'ining ichida, guruh qatorida esa `xmin` versiyasi bor. Oxirgi o'ringa ikki kishi bir vaqtda yozilsa, ikkinchisi `409 Conflict.DuplicateKey` oladi va qayta urinadi; o'rinlar sonidan oshib ketmaydi.
 - **Guruh bekor qilinsa,** undagi barcha joriy yozilishlar (navbat, to'lov kutilayotgan va faol) `Dropped` bo'ladi (`dropReason: 4` — guruh bekor qilindi). To'lagan oilani admin boshqa guruhga qo'lda o'tkazadi, pul qaytarilmaydi.
 - **Hali yo'q:** `Completed` (4) holati kurs tugashi bilan birga qo'shiladi. O'quvchi hisobi o'chirilganda uning yozilishlari Academy'da qoladi; event mexanizmi bilan tozalanadi. Spec'dagi to'lov sahifasi ochiq turgan 30 daqiqalik band Payment bilan keladi. Admin ro'yxatida o'quvchi ismi yo'q, faqat `studentUserId`: ismni frontend Student'dan (`GET /students`) oladi.
+
+## Fayllar (Storage)
+
+Storage faqat fayl baytlarini saqlaydi. Fayl nima ekanini (pasport, transkript, rasm) bilmaydi, buni faylni ishlatadigan modul biladi. Baytlar API orqali o'tmaydi: brauzer faylni imzolangan havola bilan to'g'ridan-to'g'ri S3 omboriga yuklaydi va yuklab oladi. Prod'da bu alohida pullik S3-mos ombor bo'ladi: Cloudflare R2 yoki Hetzner Object Storage, buyurtmachi hali tanlamagan. Lokalda SeaweedFS ishlatiladi (pastda). Bu yo'l spec'dagi talab bo'yicha tanlandi. Muqobili fayllarni API orqali qabul qilib, serverning o'z diskida saqlash edi: alohida ombor kerak bo'lmasdi, lekin hamma fayl serverdan o'tardi, disk, zaxira nusxa va ikkinchi server masalasi bizga qolardi.
+
+**Yuklash oqimi** (login qilgan har qanday foydalanuvchi):
+
+1. `POST /files/upload-url` `{ "fileName", "contentType", "sizeBytes" }` — javob: `{ fileId, uploadUrl, method: "PUT", headers, expiresOnUtc }`. Havola 10 daqiqa amal qiladi.
+2. Brauzer faylni `uploadUrl` ga `PUT` qiladi va `headers` dagi `Content-Type` ni aynan shunday yuboradi; boshqa tur bilan ombor so'rovni rad etadi.
+3. `POST /files/{fileId}/complete` — API ombordagi faylning avval hajmini, keyin birinchi baytlarini tekshiradi. Fayl vaqtinchalik kalitdan (`uploads/<uuid>`) doimiy kalitga (`docs/<uuid>`) ko'chiriladi va `Uploaded` bo'ladi.
+4. `GET /files/{fileId}/download-url` — 5 daqiqalik yuklab olish havolasi. Fayl asl nomi bilan yuklanadi (`Content-Disposition: attachment`).
+
+**Qoidalar va qarorlar.**
+
+- **Turlar va hajm.** Faqat PDF, JPG, PNG va HEIC, har biri 20 MB gacha. Fayl nomining kengaytmasi turga mos bo'lishi kerak (`StoredFile.UnsupportedType`, `StoredFile.TooLarge`, `StoredFile.Empty`).
+- **Mazmun tekshiriladi.** Tasdiqlashda faylning birinchi baytlari (PDF `%PDF-`, PNG va JPEG imzosi, HEIC `ftyp` brendi) va hajmi tekshiriladi. Mos kelmasa, fayl ombordan o'chiriladi va `StoredFile.ContentMismatch` yoki `StoredFile.SizeMismatch` qaytadi. O'quvchi shu `fileId` bilan qayta yuklashi mumkin, lekin uning `uploadUrl` i 10 daqiqadan keyin eskiradi va yangi `upload-url` kerak bo'ladi.
+- **Tasdiqlangan faylni almashtirib bo'lmaydi.** Yuklash havolasi tasdiqlangandan keyin ham 10 daqiqa amal qiladi, chunki imzolangan PUT'ni bekor qilib bo'lmaydi. Shuning uchun havola faqat vaqtinchalik kalitga yozadi, tekshirilgan fayl esa havolasi yo'q doimiy kalitga ko'chiriladi. Kimdir tasdiqlangandan keyin shu havola bilan yana yuklasa, u tashlab ketilgan yuklash bo'lib qoladi va tozalanadi.
+- **Cheklovlar.** Bir foydalanuvchida bir vaqtda ko'pi bilan 10 ta tasdiqlanmagan yuklash bo'ladi (`StoredFile.TooManyPending`). `upload-url` ga foydalanuvchi boshiga daqiqasiga 20 ta so'rov ruxsat etiladi (`RateLimitPolicies.FileUpload`, oshsa `429`). Imzolangan PUT hajmni yuklash paytida cheklay olmaydi, shuning uchun hajmni tasdiqlash bosqichi tekshiradi, tasdiqlanmagan baytlarni esa tozalash job'i o'chiradi. Prod'da omborga umumiy hajm chegarasini (quota) qo'yish tavsiya etiladi.
+- **Kim ko'radi.** Faylni faqat uni yuklagan odam tasdiqlaydi va yuklab oladi; boshqasiga `404 StoredFile.NotFound`. Mentor yoki admin o'quvchi hujjatini ko'rishi kerak bo'lsa, ruxsatni hujjatni ishlatadigan modul (Student) tekshiradi va havolani adapter orqali so'raydi. Bu adapter birinchi shunday modul bilan qo'shiladi.
+- **Kalitlar tasodifiy.** Ombordagi kalit `docs/<uuid>`: unda fayl nomi yoki o'quvchi ismi yo'q. Asl nom faqat bazada saqlanadi. Bucket yopiq, imzosiz so'rov rad etiladi.
+- **Tashlab ketilgan yuklashlar.** Bir soat ichida tasdiqlanmagan yuklashning ikkala kaliti ham ombordan o'chiriladi va u `Deleted` bo'ladi (Hangfire, har soatda `storage-remove-abandoned-uploads`, bir ishga tushishda 500 tagacha).
+- **Hali yo'q:** virus tekshiruvi (ClamAV, spec 14.1) — fayllar hozircha tekshirilmagan holda saqlanadi. Ommaviy bucket (yangilik rasmlari, logolar) ularni ishlatadigan modul bilan keladi. Fayl `sha256` i, HEIC'ni JPG'ga o'girish va xodim yuklab olishini audit'ga yozish ham keyin.
+- **S3 sozlamalari** `Storage:S3` bo'limida: `ServiceUrl`, `Region`, `AccessKey`, `SecretKey`, `DocumentsBucket`, `ForcePathStyle`. Birinchi beshtasi bo'sh bo'lsa, API ishga tushmaydi. Prod kaliti faqat shu bitta bucket'ga yozish va o'qish huquqiga ega bo'lishi, bucket CORS'i esa faqat haqiqiy frontend manzilini ruxsat qilishi kerak. SDK'ning yangi standart checksum'lari o'chirilgan (`WHEN_REQUIRED`), chunki S3-mos omborlar ularni har doim ham qo'llamaydi.
+- **Lokal ombor SeaweedFS.** MinIO endi tayyor community image chiqarmaydi, shuning uchun lokalda SeaweedFS'ning S3 gateway'i ishlaydi (`docker compose` dagi `seaweedfs`; `seaweedfs-buckets` bir martalik konteyner `fourprep-documents` bucket'ini yaratadi). Kod faqat S3 API'ni biladi, shuning uchun prod'da R2 ham, Hetzner ham faqat `Storage:S3` sozlamalari bilan ishlaydi. Brauzer `http://localhost:4200` dan yuklashi uchun CORS yoqilgan. Port faqat `127.0.0.1` da ochiq, chunki lokal kalit hammaga ma'lum.
 
 ## Butun dunyodan foydalanuvchilar
 
