@@ -91,7 +91,7 @@ Modules in `src/Modules/`:
 | AI | AI Counselor, plan wizard and My Plan, weekly check-in | skeleton |
 | Chat | threads and messages | skeleton |
 | Notification | in-app, email and Telegram notifications | skeleton |
-| Storage | file bytes only: objects, signed upload and download links, deletes | implemented (signed upload, confirm, signed download, abandoned-upload cleanup); no virus scan yet |
+| Storage | file bytes only: objects, signed upload and download links, deletes | implemented (signed upload, confirm, ClamAV scan, signed download, file lookup and purge for other modules, abandoned-upload cleanup) |
 | Audit | the append-only log of sensitive actions from every module; never purged | skeleton |
 
 Ownership rules that are easy to get wrong:

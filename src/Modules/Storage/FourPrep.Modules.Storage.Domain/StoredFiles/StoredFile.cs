@@ -6,6 +6,8 @@ public sealed class StoredFile
 {
     public const int MaxPendingPerUser = 10;
 
+    public const int MaxScanAttempts = 3;
+
     public static readonly TimeSpan UploadWindow = TimeSpan.FromMinutes(10);
 
     public static readonly TimeSpan DownloadWindow = TimeSpan.FromMinutes(5);
@@ -21,9 +23,15 @@ public sealed class StoredFile
     public long SizeBytes { get; set; }
     public Guid UploadedByUserId { get; set; }
     public StoredFileStatus Status { get; set; }
+    public ScanStatus ScanStatus { get; set; }
+    public string? Sha256 { get; set; }
+    public DateTimeOffset? ScannedOnUtc { get; set; }
+    public int ScanAttempts { get; set; }
     public DateTimeOffset CreatedOnUtc { get; set; }
     public DateTimeOffset? UploadedOnUtc { get; set; }
     public DateTimeOffset? DeletedOnUtc { get; set; }
+
+    public bool IsAwaitingScan => Status == StoredFileStatus.Uploaded && ScanStatus == ScanStatus.Pending;
 
     public static StoredFile Create(
         string fileName,
@@ -62,9 +70,54 @@ public sealed class StoredFile
         }
 
         Status = StoredFileStatus.Uploaded;
+        ScanStatus = ScanStatus.Pending;
         UploadedOnUtc = utcNow;
 
         return Result.Success();
+    }
+
+    public Result MarkClean(string sha256, DateTime utcNow)
+    {
+        if (!IsAwaitingScan)
+        {
+            return Result.Failure(StoredFileErrors.NotAwaitingScan);
+        }
+
+        ScanStatus = ScanStatus.Clean;
+        Sha256 = sha256;
+        ScannedOnUtc = utcNow;
+
+        return Result.Success();
+    }
+
+    public Result MarkInfected(DateTime utcNow)
+    {
+        if (!IsAwaitingScan)
+        {
+            return Result.Failure(StoredFileErrors.NotAwaitingScan);
+        }
+
+        ScanStatus = ScanStatus.Infected;
+        ScannedOnUtc = utcNow;
+        Delete(utcNow);
+
+        return Result.Success();
+    }
+
+    public void RecordScanFailure(DateTime utcNow)
+    {
+        if (!IsAwaitingScan)
+        {
+            return;
+        }
+
+        ScanAttempts++;
+
+        if (ScanAttempts >= MaxScanAttempts)
+        {
+            ScanStatus = ScanStatus.Failed;
+            ScannedOnUtc = utcNow;
+        }
     }
 
     public void Delete(DateTime utcNow)

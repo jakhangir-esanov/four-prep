@@ -66,6 +66,57 @@ public class StoredFileTests
         Assert.Equal(Now, file.DeletedOnUtc);
     }
 
+    [Fact]
+    public void MarkClean_RefusesAFileThatIsNotWaitingForAScan()
+    {
+        var notUploaded = File();
+        var deleted = File();
+        deleted.CompleteUpload(64, Now);
+        deleted.Delete(Now);
+
+        Assert.Equal(StoredFileErrors.NotAwaitingScan, notUploaded.MarkClean("abc", Now).Error);
+        Assert.Equal(StoredFileErrors.NotAwaitingScan, deleted.MarkClean("abc", Now).Error);
+        Assert.Equal(ScanStatus.NotScanned, notUploaded.ScanStatus);
+        Assert.Equal(ScanStatus.Pending, deleted.ScanStatus);
+        Assert.Null(deleted.Sha256);
+    }
+
+    [Fact]
+    public void MarkInfected_DeletesTheFile()
+    {
+        var file = File();
+        file.CompleteUpload(64, Now);
+
+        var result = file.MarkInfected(Now);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(ScanStatus.Infected, file.ScanStatus);
+        Assert.Equal(StoredFileStatus.Deleted, file.Status);
+        Assert.Equal(Now, file.DeletedOnUtc);
+    }
+
+    [Fact]
+    public void MarkInfected_RefusesACleanFile()
+    {
+        var file = File();
+        file.CompleteUpload(64, Now);
+        file.MarkClean("abc", Now);
+
+        Assert.Equal(StoredFileErrors.NotAwaitingScan, file.MarkInfected(Now).Error);
+        Assert.Equal(StoredFileStatus.Uploaded, file.Status);
+    }
+
+    [Fact]
+    public void RecordScanFailure_IgnoresAFileThatIsNotWaitingForAScan()
+    {
+        var file = File();
+
+        file.RecordScanFailure(Now);
+
+        Assert.Equal(0, file.ScanAttempts);
+        Assert.Equal(ScanStatus.NotScanned, file.ScanStatus);
+    }
+
     [Theory]
     [InlineData("application/pdf")]
     [InlineData("image/png")]

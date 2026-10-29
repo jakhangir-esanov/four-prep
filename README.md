@@ -10,7 +10,7 @@ Kerak bo'ladi: .NET 10 SDK, Docker va `localhost:5432` da ishlab turgan PostgreS
    psql -h localhost -U postgres -c "CREATE DATABASE fourprep_keycloak"
    ```
 
-2. Keycloak, Mailpit va fayl omborini (SeaweedFS) ishga tushiring:
+2. Keycloak, Mailpit, fayl ombori (SeaweedFS) va ClamAV'ni ishga tushiring:
 
    ```bash
    docker compose up -d --build
@@ -37,6 +37,7 @@ Kerak bo'ladi: .NET 10 SDK, Docker va `localhost:5432` da ishlab turgan PostgreS
 | `fourprep-api` client secret | `fourprep-dev-secret` |
 | Mailpit (yuborilgan xatlar) | http://localhost:8025 |
 | Fayl ombori (SeaweedFS S3) | http://localhost:8333, `fourprep-dev` / `fourprep-dev-storage-secret`, bucket `fourprep-documents` |
+| Virus tekshiruvi (ClamAV) | `localhost:3310` |
 
 Bu qiymatlarni prod'da ishlatmang.
 
@@ -58,7 +59,7 @@ Har bir modul o'z PostgreSQL sxemasiga ega va boshqa modulga faqat adapter orqal
 | AI | AI Counselor, plan wizard va My Plan, haftalik check-in | skeleton |
 | Chat | suhbatlar va xabarlar | skeleton |
 | Notification | ilova ichidagi, email va Telegram bildirishnomalari | skeleton |
-| Storage | faqat fayl baytlari: obyektlar, yuklash va yuklab olish uchun imzolangan havolalar, o'chirish | tayyor: yuklash, tasdiqlash, yuklab olish (virus tekshiruvisiz) |
+| Storage | faqat fayl baytlari: obyektlar, yuklash va yuklab olish uchun imzolangan havolalar, o'chirish | tayyor: yuklash, tasdiqlash, ClamAV tekshiruvi, yuklab olish, boshqa modullar uchun API |
 | Audit | barcha modullardagi muhim amallarning faqat qo'shiladigan (append-only) jurnali; hech qachon o'chirilmaydi | skeleton |
 
 Nega shunday bo'lindi:
@@ -218,7 +219,8 @@ Storage faqat fayl baytlarini saqlaydi. Fayl nima ekanini (pasport, transkript, 
 1. `POST /files/upload-url` `{ "fileName", "contentType", "sizeBytes" }` — javob: `{ fileId, uploadUrl, method: "PUT", headers, expiresOnUtc }`. Havola 10 daqiqa amal qiladi.
 2. Brauzer faylni `uploadUrl` ga `PUT` qiladi va `headers` dagi `Content-Type` ni aynan shunday yuboradi; boshqa tur bilan ombor so'rovni rad etadi.
 3. `POST /files/{fileId}/complete` — API ombordagi faylning avval hajmini, keyin birinchi baytlarini tekshiradi. Fayl vaqtinchalik kalitdan (`uploads/<uuid>`) doimiy kalitga (`docs/<uuid>`) ko'chiriladi va `Uploaded` bo'ladi.
-4. `GET /files/{fileId}/download-url` — 5 daqiqalik yuklab olish havolasi. Fayl asl nomi bilan yuklanadi (`Content-Disposition: attachment`).
+4. Fon job'i faylni ClamAV bilan virusga tekshiradi (tasdiqlangandan keyin darhol, zaxira sifatida har daqiqada). Toza fayl `scanStatus: 2` (Clean) va `sha256` oladi. Zararli fayl ombordan o'chiriladi va `scanStatus: 3` (Infected), `Deleted` bo'ladi.
+5. `GET /files/{fileId}/download-url` — 5 daqiqalik yuklab olish havolasi, faqat toza fayl uchun. Tekshiruv tugamagan bo'lsa `409 StoredFile.NotScanned` qaytadi, frontend bir necha soniyadan keyin qayta so'raydi. Fayl asl nomi bilan yuklanadi (`Content-Disposition: attachment`).
 
 **Qoidalar va qarorlar.**
 
@@ -226,10 +228,15 @@ Storage faqat fayl baytlarini saqlaydi. Fayl nima ekanini (pasport, transkript, 
 - **Mazmun tekshiriladi.** Tasdiqlashda faylning birinchi baytlari (PDF `%PDF-`, PNG va JPEG imzosi, HEIC `ftyp` brendi) va hajmi tekshiriladi. Mos kelmasa, fayl ombordan o'chiriladi va `StoredFile.ContentMismatch` yoki `StoredFile.SizeMismatch` qaytadi. O'quvchi shu `fileId` bilan qayta yuklashi mumkin, lekin uning `uploadUrl` i 10 daqiqadan keyin eskiradi va yangi `upload-url` kerak bo'ladi.
 - **Tasdiqlangan faylni almashtirib bo'lmaydi.** Yuklash havolasi tasdiqlangandan keyin ham 10 daqiqa amal qiladi, chunki imzolangan PUT'ni bekor qilib bo'lmaydi. Shuning uchun havola faqat vaqtinchalik kalitga yozadi, tekshirilgan fayl esa havolasi yo'q doimiy kalitga ko'chiriladi. Kimdir tasdiqlangandan keyin shu havola bilan yana yuklasa, u tashlab ketilgan yuklash bo'lib qoladi va tozalanadi.
 - **Cheklovlar.** Bir foydalanuvchida bir vaqtda ko'pi bilan 10 ta tasdiqlanmagan yuklash bo'ladi (`StoredFile.TooManyPending`). `upload-url` ga foydalanuvchi boshiga daqiqasiga 20 ta so'rov ruxsat etiladi (`RateLimitPolicies.FileUpload`, oshsa `429`). Imzolangan PUT hajmni yuklash paytida cheklay olmaydi, shuning uchun hajmni tasdiqlash bosqichi tekshiradi, tasdiqlanmagan baytlarni esa tozalash job'i o'chiradi. Prod'da omborga umumiy hajm chegarasini (quota) qo'yish tavsiya etiladi.
-- **Kim ko'radi.** Faylni faqat uni yuklagan odam tasdiqlaydi va yuklab oladi; boshqasiga `404 StoredFile.NotFound`. Mentor yoki admin o'quvchi hujjatini ko'rishi kerak bo'lsa, ruxsatni hujjatni ishlatadigan modul (Student) tekshiradi va havolani adapter orqali so'raydi. Bu adapter birinchi shunday modul bilan qo'shiladi.
+- **Kim ko'radi.** Endpoint orqali faylni faqat uni yuklagan odam tasdiqlaydi va yuklab oladi; boshqasiga `404 StoredFile.NotFound`. Mentor yoki admin o'quvchi hujjatini ko'rishi kerak bo'lsa, ruxsatni hujjatni ishlatadigan modul (masalan Student) tekshiradi va Storage'ga o'z adapteri orqali murojaat qiladi.
+- **Boshqa modullar uchun API** (endpoint'siz, faqat `ISender` va adapter orqali):
+  - `GetStoredFileQuery(fileId)` — fayl ma'lumoti: kim yuklagan, holati, tekshiruv holati, `sha256`, `isReady` (yuklangan va toza). Modul o'quvchi hujjatga faqat o'zi yuklagan va tayyor faylni biriktirayotganini shu bilan tekshiradi.
+  - `GetDownloadUrlQuery(fileId)` — egasini tekshirmaydigan 5 daqiqalik havola. Ruxsatni chaqiruvchi modul tekshirgan bo'lishi kerak.
+  - `DeleteFileCommand(fileId)` — faylni ombordan o'chiradi, yozuv `Deleted` va o'chirilgan sana bilan qoladi (offboarding purge). Qayta chaqirish zararsiz.
 - **Kalitlar tasodifiy.** Ombordagi kalit `docs/<uuid>`: unda fayl nomi yoki o'quvchi ismi yo'q. Asl nom faqat bazada saqlanadi. Bucket yopiq, imzosiz so'rov rad etiladi.
 - **Tashlab ketilgan yuklashlar.** Bir soat ichida tasdiqlanmagan yuklashning ikkala kaliti ham ombordan o'chiriladi va u `Deleted` bo'ladi (Hangfire, har soatda `storage-remove-abandoned-uploads`, bir ishga tushishda 500 tagacha).
-- **Hali yo'q:** virus tekshiruvi (ClamAV, spec 14.1) — fayllar hozircha tekshirilmagan holda saqlanadi. Ommaviy bucket (yangilik rasmlari, logolar) ularni ishlatadigan modul bilan keladi. Fayl `sha256` i, HEIC'ni JPG'ga o'girish va xodim yuklab olishini audit'ga yozish ham keyin.
+- **Virus tekshiruvi.** ClamAV'ning `clamd` xizmati bilan INSTREAM protokoli orqali gaplashiladi (`Storage:ClamAv`: `Host`, `Port`, `TimeoutSeconds`). Fayl S3'dan o'qiladi (20 MB gacha, xotirada), tekshiriladi va o'sha baytlardan `sha256` hisoblanadi. Har bir fayl alohida tekshiriladi: bitta fayl xato bersa (ClamAV ishlamay qoldi, javob bermadi, ombordagi obyekt yo'q), boshqalari tekshirilaveradi, u fayl esa keyingi urinishda navbatning oxiriga o'tadi. Uch marta tekshirib bo'lmagan fayl `scanStatus: 4` (Failed) bo'ladi va yuklab olishda `409 StoredFile.ScanFailed` qaytadi: o'quvchi faylni qaytadan yuklaydi. `clamav/clamd.conf` da `AlertExceedsMax yes`: fayl ClamAV chegaralaridan oshsa, u toza deb o'tkazib yuborilmaydi, zararli deb hisoblanadi. Fayl baytlari clamd'ga shifrlanmagan TCP orqali boradi, clamd esa parol so'ramaydi, shuning uchun prod'da u faqat API bilan bir yopiq tarmoqda (yoki localhost'da) turishi kerak. Yuklab olish shu tekshiruvlar tugaguncha yopiq. Lokalda `docker compose` dagi `clamav` birinchi ishga tushishda virus bazasini yuklab oladi, bu bir necha daqiqa oladi.
+- **Hali yo'q:** zararli fayl haqida o'quvchiga xabar (Notification bilan), ommaviy bucket (yangilik rasmlari, logolar, ularni ishlatadigan modul bilan), HEIC'ni JPG'ga o'girish va kichik rasm, xodim yuklab olishini audit'ga yozish (Audit bilan).
 - **S3 sozlamalari** `Storage:S3` bo'limida: `ServiceUrl`, `Region`, `AccessKey`, `SecretKey`, `DocumentsBucket`, `ForcePathStyle`. Birinchi beshtasi bo'sh bo'lsa, API ishga tushmaydi. Prod kaliti faqat shu bitta bucket'ga yozish va o'qish huquqiga ega bo'lishi, bucket CORS'i esa faqat haqiqiy frontend manzilini ruxsat qilishi kerak. SDK'ning yangi standart checksum'lari o'chirilgan (`WHEN_REQUIRED`), chunki S3-mos omborlar ularni har doim ham qo'llamaydi.
 - **Lokal ombor SeaweedFS.** MinIO endi tayyor community image chiqarmaydi, shuning uchun lokalda SeaweedFS'ning S3 gateway'i ishlaydi (`docker compose` dagi `seaweedfs`; `seaweedfs-buckets` bir martalik konteyner `fourprep-documents` bucket'ini yaratadi). Kod faqat S3 API'ni biladi, shuning uchun prod'da R2 ham, Hetzner ham faqat `Storage:S3` sozlamalari bilan ishlaydi. Brauzer `http://localhost:4200` dan yuklashi uchun CORS yoqilgan. Port faqat `127.0.0.1` da ochiq, chunki lokal kalit hammaga ma'lum.
 

@@ -10,6 +10,8 @@ public interface IObjectStorage
 
     Task<byte[]> ReadStartAsync(string objectKey, int length, CancellationToken cancellationToken = default);
 
+    Task<byte[]> ReadAsync(string objectKey, CancellationToken cancellationToken = default);
+
     Task MoveAsync(string sourceKey, string targetKey, CancellationToken cancellationToken = default);
 
     Task DeleteAsync(string objectKey, CancellationToken cancellationToken = default);

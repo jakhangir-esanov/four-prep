@@ -52,5 +52,18 @@ services:
       - seaweedfs
     restart: 'no'
 
+  # Scans every confirmed upload (clamd on port 3310). The first start downloads the virus
+  # signatures and takes a few minutes before scans are answered. clamd.conf reports files
+  # that exceed the scan limits as infected (AlertExceedsMax) instead of passing them.
+  clamav:
+    image: clamav/clamav:1.4.3
+    container_name: fourprep-clamav
+    ports:
+      - '127.0.0.1:3310:3310'
+    volumes:
+      - ./clamav/clamd.conf:/etc/clamav/clamd.conf:ro
+      - clamav-data:/var/lib/clamav
+
 volumes:
   seaweedfs-data:
+  clamav-data:

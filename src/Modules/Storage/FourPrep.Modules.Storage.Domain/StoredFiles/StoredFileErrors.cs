@@ -40,6 +40,24 @@ public static class StoredFileErrors
         uz: "Fayl hali omborga yetib kelmagan. Avval uni havola orqali yuklang, keyin qayta tasdiqlang.",
         ru: "Файл ещё не попал в хранилище. Сначала загрузите его по ссылке, затем подтвердите снова.");
 
+    public static readonly Error NotScanned = Error.Conflict(
+        "StoredFile.NotScanned",
+        en: "The file is still being checked for viruses. Try again in a few seconds.",
+        uz: "Fayl hali virusga tekshirilmoqda. Bir necha soniyadan keyin qayta urinib ko'ring.",
+        ru: "Файл ещё проверяется на вирусы. Попробуйте снова через несколько секунд.");
+
+    public static readonly Error ScanFailed = Error.Conflict(
+        "StoredFile.ScanFailed",
+        en: "The file could not be checked for viruses. Upload it again.",
+        uz: "Faylni virusga tekshirib bo'lmadi. Uni qaytadan yuklang.",
+        ru: "Не удалось проверить файл на вирусы. Загрузите его заново.");
+
+    public static readonly Error NotAwaitingScan = Error.Conflict(
+        "StoredFile.NotAwaitingScan",
+        en: "The file is not waiting for a virus check.",
+        uz: "Fayl virus tekshiruvini kutmayapti.",
+        ru: "Файл не ожидает проверки на вирусы.");
+
     public static readonly Error AlreadyUploaded = Error.Conflict(
         "StoredFile.AlreadyUploaded",
         en: "This upload has already been confirmed.",

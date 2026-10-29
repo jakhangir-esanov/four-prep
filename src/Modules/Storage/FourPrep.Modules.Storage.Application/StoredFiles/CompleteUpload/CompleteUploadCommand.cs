@@ -6,6 +6,7 @@ using FourPrep.Common.Application.Messaging;
 using FourPrep.Modules.Storage.Domain.StoredFiles;
 using FourPrep.Modules.Storage.Application.Abstractions.Data;
 using FourPrep.Modules.Storage.Application.Abstractions.ObjectStorage;
+using FourPrep.Modules.Storage.Application.Abstractions.VirusScanning;
 using FourPrep.Modules.Storage.Application.Abstractions.Authentication;
 
 public sealed record CompleteUploadCommand(Guid FileId) : ICommand;
@@ -14,6 +15,7 @@ internal sealed class CompleteUploadCommandHandler(
     IUnitOfWork unitOfWork,
     ICurrentUser currentUser,
     IObjectStorage objectStorage,
+    IVirusScanQueue virusScanQueue,
     IStoredFileRepository repository,
     IDateTimeProvider dateTimeProvider) : ICommandHandler<CompleteUploadCommand>
 {
@@ -54,6 +56,8 @@ internal sealed class CompleteUploadCommandHandler(
         }
 
         await unitOfWork.SaveChangesAsync(cancellationToken);
+
+        virusScanQueue.RequestScan();
 
         return Result.Success();
     }

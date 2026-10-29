@@ -12,6 +12,11 @@ internal sealed class RecurringJobsRegistration(IRecurringJobManager recurringJo
             job => job.RunAsync(CancellationToken.None),
             Cron.Hourly());
 
+        recurringJobManager.AddOrUpdate<ScanUploadedFilesJob>(
+            ScanUploadedFilesJob.JobId,
+            job => job.RunAsync(CancellationToken.None),
+            Cron.Minutely());
+
         return Task.CompletedTask;
     }
 

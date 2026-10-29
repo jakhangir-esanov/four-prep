@@ -25,6 +25,16 @@ internal sealed class StoredFileRepository(StorageDbContext dbContext) : IStored
             .ToListAsync(cancellationToken);
     }
 
+    public async Task<IReadOnlyList<StoredFile>> GetAwaitingScanAsync(int limit, CancellationToken cancellationToken = default)
+    {
+        return await dbContext.StoredFiles
+            .Where(x => x.Status == StoredFileStatus.Uploaded && x.ScanStatus == ScanStatus.Pending)
+            .OrderBy(x => x.ScanAttempts)
+            .ThenBy(x => x.UploadedOnUtc)
+            .Take(limit)
+            .ToListAsync(cancellationToken);
+    }
+
     public async Task<int> CountPendingAsync(Guid uploadedByUserId, CancellationToken cancellationToken = default)
     {
         return await dbContext.StoredFiles.CountAsync(

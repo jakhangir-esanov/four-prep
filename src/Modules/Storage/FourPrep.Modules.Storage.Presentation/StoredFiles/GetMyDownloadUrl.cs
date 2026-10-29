@@ -10,7 +10,7 @@ using FourPrep.Common.Presentation.Results;
 using FourPrep.Common.Presentation.Endpoints;
 using FourPrep.Modules.Storage.Application.StoredFiles.GetDownloadUrl;
 
-internal sealed class GetDownloadUrl : IEndpoint
+internal sealed class GetMyDownloadUrl : IEndpoint
 {
     public void MapEndpoint(IEndpointRouteBuilder app)
     {
@@ -18,7 +18,7 @@ internal sealed class GetDownloadUrl : IEndpoint
             [FromServices] ISender sender,
             Guid id) =>
         {
-            var result = await sender.Send(new GetDownloadUrlQuery(id));
+            var result = await sender.Send(new GetMyDownloadUrlQuery(id));
 
             return result.ToResponse();
         })
@@ -26,6 +26,7 @@ internal sealed class GetDownloadUrl : IEndpoint
         .Produces<Result<DownloadUrlResponse>>(StatusCodes.Status200OK)
         .Produces(StatusCodes.Status401Unauthorized)
         .Produces<Result>(StatusCodes.Status404NotFound)
+        .Produces<Result>(StatusCodes.Status409Conflict)
         .Produces(StatusCodes.Status500InternalServerError)
         .WithTags("Storage / Files");
     }

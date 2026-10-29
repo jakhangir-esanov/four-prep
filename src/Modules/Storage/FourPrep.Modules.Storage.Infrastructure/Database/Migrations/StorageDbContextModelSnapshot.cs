@@ -56,6 +56,23 @@ namespace FourPrep.Modules.Storage.Infrastructure.Database.Migrations
                         .HasColumnType("character varying(100)")
                         .HasColumnName("object_key");
 
+                    b.Property<int>("ScanAttempts")
+                        .HasColumnType("integer")
+                        .HasColumnName("scan_attempts");
+
+                    b.Property<int>("ScanStatus")
+                        .HasColumnType("integer")
+                        .HasColumnName("scan_status");
+
+                    b.Property<DateTimeOffset?>("ScannedOnUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("scanned_on_utc");
+
+                    b.Property<string>("Sha256")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("sha256");
+
                     b.Property<long>("SizeBytes")
                         .HasColumnType("bigint")
                         .HasColumnName("size_bytes");
@@ -94,6 +111,9 @@ namespace FourPrep.Modules.Storage.Infrastructure.Database.Migrations
 
                     b.HasIndex("Status", "CreatedOnUtc")
                         .HasDatabaseName("ix_stored_files_status_created_on_utc");
+
+                    b.HasIndex("Status", "ScanStatus")
+                        .HasDatabaseName("ix_stored_files_status_scan_status");
 
                     b.ToTable("stored_files", "storage");
                 });

@@ -269,5 +269,5 @@ public class StoredFileCommandHandlerTests
         FakeObjectStorage storage,
         FakeUnitOfWork unitOfWork,
         Guid currentUserId) =>
-        new(unitOfWork, new FakeCurrentUser(currentUserId), storage, files, new FakeClock());
+        new(unitOfWork, new FakeCurrentUser(currentUserId), storage, new FakeVirusScanQueue(), files, new FakeClock());
 }

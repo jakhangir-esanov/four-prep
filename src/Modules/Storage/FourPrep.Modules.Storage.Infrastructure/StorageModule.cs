@@ -13,6 +13,8 @@ using FourPrep.Modules.Storage.Domain.StoredFiles;
 using FourPrep.Modules.Storage.Infrastructure.Database;
 using FourPrep.Modules.Storage.Infrastructure.StoredFiles;
 using FourPrep.Modules.Storage.Infrastructure.ObjectStorage;
+using FourPrep.Modules.Storage.Infrastructure.VirusScanning;
+using FourPrep.Modules.Storage.Application.Abstractions.VirusScanning;
 using FourPrep.Modules.Storage.Application.Abstractions.ObjectStorage;
 using FourPrep.Modules.Storage.Application.Abstractions.Data;
 using FourPrep.Modules.Storage.Infrastructure.Authentication;
@@ -52,7 +54,15 @@ public static class StorageModule
         services.AddSingleton<IAmazonS3>(sp => CreateS3Client(sp.GetRequiredService<IOptions<S3StorageOptions>>().Value));
         services.AddSingleton<IObjectStorage, S3ObjectStorage>();
 
+        services.AddOptions<ClamAvOptions>()
+            .Bind(configuration.GetSection(ClamAvOptions.SectionName))
+            .Validate(ClamAvOptions.IsComplete, ClamAvOptions.IncompleteMessage)
+            .ValidateOnStart();
+        services.AddSingleton<IVirusScanner, ClamAvScanner>();
+        services.AddScoped<IVirusScanQueue, HangfireVirusScanQueue>();
+
         services.AddScoped<RemoveAbandonedUploadsJob>();
+        services.AddScoped<ScanUploadedFilesJob>();
         services.AddHostedService<RecurringJobsRegistration>();
     }
 

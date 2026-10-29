@@ -5,6 +5,7 @@ using FourPrep.Common.Application.Clock;
 using FourPrep.Modules.Storage.Domain.StoredFiles;
 using FourPrep.Modules.Storage.Application.Abstractions.Data;
 using FourPrep.Modules.Storage.Application.Abstractions.ObjectStorage;
+using FourPrep.Modules.Storage.Application.Abstractions.VirusScanning;
 using FourPrep.Modules.Storage.Application.Abstractions.Authentication;
 
 internal sealed class FakeClock : IDateTimeProvider
@@ -52,6 +53,10 @@ internal sealed class FakeStoredFileRepository : IStoredFileRepository
         Task.FromResult<IReadOnlyList<StoredFile>>(
             [.. Files.Where(x => x.Status == StoredFileStatus.Pending && x.CreatedOnUtc < cutoffUtc).Take(limit)]);
 
+    public Task<IReadOnlyList<StoredFile>> GetAwaitingScanAsync(int limit, CancellationToken cancellationToken = default) =>
+        Task.FromResult<IReadOnlyList<StoredFile>>(
+            [.. Files.Where(x => x.IsAwaitingScan).OrderBy(x => x.ScanAttempts).ThenBy(x => x.UploadedOnUtc).Take(limit)]);
+
     public Task<int> CountPendingAsync(Guid uploadedByUserId, CancellationToken cancellationToken = default) =>
         Task.FromResult(Files.Count(x => x.UploadedByUserId == uploadedByUserId && x.Status == StoredFileStatus.Pending));
 
@@ -81,6 +86,9 @@ internal sealed class FakeObjectStorage : IObjectStorage
         return Task.FromResult(Objects[objectKey].Take(length).ToArray());
     }
 
+    public Task<byte[]> ReadAsync(string objectKey, CancellationToken cancellationToken = default) =>
+        Task.FromResult(Objects[objectKey]);
+
     public Task MoveAsync(string sourceKey, string targetKey, CancellationToken cancellationToken = default)
     {
         Objects[targetKey] = Objects[sourceKey];
@@ -94,6 +102,33 @@ internal sealed class FakeObjectStorage : IObjectStorage
         Deleted.Add(objectKey);
         return Task.CompletedTask;
     }
+}
+
+internal sealed class FakeVirusScanner : IVirusScanner
+{
+    public HashSet<string> InfectedContents { get; } = [];
+
+    public HashSet<string> BrokenContents { get; } = [];
+
+    public async Task<VirusScanResult> ScanAsync(Stream content, CancellationToken cancellationToken = default)
+    {
+        using var reader = new StreamReader(content);
+        var text = await reader.ReadToEndAsync(cancellationToken);
+
+        if (BrokenContents.Any(text.Contains))
+        {
+            throw new IOException("clamd closed the connection");
+        }
+
+        return InfectedContents.Any(text.Contains) ? VirusScanResult.Infected("Eicar-Test-Signature") : VirusScanResult.Clean;
+    }
+}
+
+internal sealed class FakeVirusScanQueue : IVirusScanQueue
+{
+    public int Requests { get; private set; }
+
+    public void RequestScan() => Requests++;
 }
 
 internal static class FileSamples

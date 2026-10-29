@@ -9,6 +9,8 @@ public interface IStoredFileRepository
         int limit,
         CancellationToken cancellationToken = default);
 
+    Task<IReadOnlyList<StoredFile>> GetAwaitingScanAsync(int limit, CancellationToken cancellationToken = default);
+
     Task<int> CountPendingAsync(Guid uploadedByUserId, CancellationToken cancellationToken = default);
 
     void Insert(StoredFile storedFile);

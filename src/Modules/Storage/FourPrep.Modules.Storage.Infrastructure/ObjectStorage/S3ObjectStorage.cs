@@ -73,6 +73,16 @@ internal sealed class S3ObjectStorage(IAmazonS3 s3, IOptions<S3StorageOptions> o
         return buffer.ToArray();
     }
 
+    public async Task<byte[]> ReadAsync(string objectKey, CancellationToken cancellationToken = default)
+    {
+        using var response = await s3.GetObjectAsync(_options.DocumentsBucket, objectKey, cancellationToken);
+
+        using var buffer = new MemoryStream();
+        await response.ResponseStream.CopyToAsync(buffer, cancellationToken);
+
+        return buffer.ToArray();
+    }
+
     public async Task MoveAsync(string sourceKey, string targetKey, CancellationToken cancellationToken = default)
     {
         await s3.CopyObjectAsync(
