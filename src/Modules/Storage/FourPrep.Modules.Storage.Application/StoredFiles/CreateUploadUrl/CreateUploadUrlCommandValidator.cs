@@ -12,9 +12,18 @@ internal sealed class CreateUploadUrlCommandValidator : AbstractValidator<Create
     {
         RuleFor(x => x.FileName).NotEmpty().MaximumLength(MaxFileNameLength);
 
+        RuleFor(x => x.Purpose)
+            .IsInEnum()
+            .WithError(StoredFileErrors.InvalidPurpose);
+
         RuleFor(x => x.ContentType)
             .Must(FileUploadRules.IsAllowedType)
             .WithError(StoredFileErrors.UnsupportedType);
+
+        RuleFor(x => x.ContentType)
+            .Must((command, contentType) => FileUploadRules.IsAllowedFor(command.Purpose, contentType))
+            .When(x => x.Purpose == StoredFilePurpose.PublicMedia && FileUploadRules.IsAllowedType(x.ContentType))
+            .WithError(StoredFileErrors.UnsupportedMediaType);
 
         RuleFor(x => x.FileName)
             .Must((command, fileName) => FileUploadRules.MatchesExtension(fileName, command.ContentType))

@@ -8,6 +8,7 @@ public sealed record StoredFileResponse
     public string FileName { get; init; } = string.Empty;
     public string ContentType { get; init; } = string.Empty;
     public long SizeBytes { get; init; }
+    public StoredFilePurpose Purpose { get; init; }
     public Guid UploadedByUserId { get; init; }
     public StoredFileStatus Status { get; init; }
     public ScanStatus ScanStatus { get; init; }

@@ -21,6 +21,34 @@ public class CreateUploadUrlCommandValidatorTests
         Assert.True(Validator.Validate(new CreateUploadUrlCommand(fileName, contentType, 1024)).IsValid);
     }
 
+    [Theory]
+    [InlineData("cover.jpg", "image/jpeg")]
+    [InlineData("cover.png", " Image/PNG ")]
+    public void Validate_WhenAPublicImageIsJpgOrPng_Passes(string fileName, string contentType)
+    {
+        var command = new CreateUploadUrlCommand(fileName, contentType, 1024, StoredFilePurpose.PublicMedia);
+
+        Assert.True(Validator.Validate(command).IsValid);
+    }
+
+    [Theory]
+    [InlineData("brochure.pdf", "application/pdf")]
+    [InlineData("IMG_0001.HEIC", "image/heic")]
+    public void Validate_WhenAPublicImageIsAnotherAllowedType_FailsWithUnsupportedMediaType(string fileName, string contentType)
+    {
+        var command = new CreateUploadUrlCommand(fileName, contentType, 1024, StoredFilePurpose.PublicMedia);
+
+        AssertSingleError(command, StoredFileErrors.UnsupportedMediaType.Code, "ContentType");
+    }
+
+    [Fact]
+    public void Validate_WhenThePurposeIsUnknown_FailsWithInvalidPurpose()
+    {
+        var command = new CreateUploadUrlCommand("a.pdf", "application/pdf", 1024, (StoredFilePurpose)9);
+
+        AssertSingleError(command, StoredFileErrors.InvalidPurpose.Code, "Purpose");
+    }
+
     [Fact]
     public void Validate_WhenTheTypeHasSpacesAround_Passes()
     {

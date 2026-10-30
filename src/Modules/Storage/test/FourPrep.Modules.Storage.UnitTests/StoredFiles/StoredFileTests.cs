@@ -155,5 +155,5 @@ public class StoredFileTests
         Assert.False(FileUploadRules.MatchesSignature("text/html", "<html>"u8.ToArray()));
     }
 
-    private static StoredFile File() => StoredFile.Create("passport.pdf", "application/pdf", 64, Guid.NewGuid(), Now);
+    private static StoredFile File() => StoredFile.Create("passport.pdf", "application/pdf", 64, StoredFilePurpose.Document, Guid.NewGuid(), Now);
 }

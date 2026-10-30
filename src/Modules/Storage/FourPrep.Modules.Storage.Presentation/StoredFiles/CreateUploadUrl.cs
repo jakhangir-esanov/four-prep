@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Routing;
 using FourPrep.Common.Presentation.Results;
 using FourPrep.Common.Presentation.Endpoints;
 using FourPrep.Common.Presentation.RateLimiting;
+using FourPrep.Modules.Storage.Domain.StoredFiles;
 using FourPrep.Modules.Storage.Presentation.StoredFiles.Requests;
 using FourPrep.Modules.Storage.Application.StoredFiles.CreateUploadUrl;
 
@@ -23,7 +24,8 @@ internal sealed class CreateUploadUrl : IEndpoint
             var result = await sender.Send(new CreateUploadUrlCommand(
                 request.FileName ?? string.Empty,
                 request.ContentType ?? string.Empty,
-                request.SizeBytes));
+                request.SizeBytes,
+                request.Purpose ?? StoredFilePurpose.Document));
 
             return result.ToResponse();
         })

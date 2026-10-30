@@ -18,6 +18,7 @@ internal sealed class GetStoredFileQueryHandler(IDbConnectionFactory dbConnectio
             f.file_name AS {nameof(StoredFileResponse.FileName)},
             f.content_type AS {nameof(StoredFileResponse.ContentType)},
             f.size_bytes AS {nameof(StoredFileResponse.SizeBytes)},
+            f.purpose AS {nameof(StoredFileResponse.Purpose)},
             f.uploaded_by_user_id AS {nameof(StoredFileResponse.UploadedByUserId)},
             f.status AS {nameof(StoredFileResponse.Status)},
             f.scan_status AS {nameof(StoredFileResponse.ScanStatus)},

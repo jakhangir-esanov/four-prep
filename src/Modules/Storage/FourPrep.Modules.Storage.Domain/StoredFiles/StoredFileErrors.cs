@@ -16,6 +16,30 @@ public static class StoredFileErrors
         uz: "Faqat PDF, JPG, PNG va HEIC fayllarni yuklash mumkin, fayl nomi esa mos kengaytma bilan tugashi kerak.",
         ru: "Можно загружать только файлы PDF, JPG, PNG и HEIC, а имя файла должно заканчиваться соответствующим расширением.");
 
+    public static readonly Error UnsupportedMediaType = Error.Problem(
+        "StoredFile.UnsupportedMediaType",
+        en: "Images for the public site can only be JPG or PNG files, and the file name must end with a matching extension.",
+        uz: "Sayt uchun rasm faqat JPG yoki PNG bo'lishi mumkin, fayl nomi esa mos kengaytma bilan tugashi kerak.",
+        ru: "Изображения для сайта могут быть только в формате JPG или PNG, а имя файла должно заканчиваться соответствующим расширением.");
+
+    public static readonly Error InvalidPurpose = Error.Problem(
+        "StoredFile.InvalidPurpose",
+        en: "Choose what the file is for: 1 for a private document or 2 for an image on the public site.",
+        uz: "Fayl nima uchun ekanini tanlang: 1 — shaxsiy hujjat, 2 — ochiq saytdagi rasm.",
+        ru: "Укажите назначение файла: 1 — личный документ, 2 — изображение для открытого сайта.");
+
+    public static readonly Error NotPublicMedia = Error.Conflict(
+        "StoredFile.NotPublicMedia",
+        en: "This file was uploaded as a private document and cannot be made public. Upload the image again for the public site.",
+        uz: "Bu fayl shaxsiy hujjat sifatida yuklangan, uni ochiq qilib bo'lmaydi. Rasmni sayt uchun qaytadan yuklang.",
+        ru: "Этот файл загружен как личный документ, и его нельзя сделать открытым. Загрузите изображение заново для сайта.");
+
+    public static readonly Error OrphanCleanupRefused = Error.Failure(
+        "StoredFile.OrphanCleanupRefused",
+        en: "Most public copies have no file record, so the database and the public bucket may not match. Nothing was removed.",
+        uz: "Ochiq nusxalarning ko'pchiligiga hech qaysi fayl yozuvi ishora qilmayapti: baza va ochiq bucket bir-biriga mos kelmasligi mumkin. Hech narsa o'chirilmadi.",
+        ru: "У большинства открытых копий нет записи о файле, поэтому база и открытый бакет, возможно, не совпадают. Ничего не удалено.");
+
     public static readonly Error TooLarge = Error.Problem(
         "StoredFile.TooLarge",
         en: "A file can be at most 20 MB.",

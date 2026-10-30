@@ -64,6 +64,7 @@ public static class StorageModule
 
         services.AddScoped<RemoveAbandonedUploadsJob>();
         services.AddScoped<ScanUploadedFilesJob>();
+        services.AddScoped<RemoveOrphanedPublicCopiesJob>();
         services.AddHostedService<RecurringJobsRegistration>();
     }
 

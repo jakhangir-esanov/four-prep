@@ -74,6 +74,32 @@ public class PublicFileTests
     }
 
     [Fact]
+    public void Publish_RefusesAPrivateDocumentEvenWhenItIsClean()
+    {
+        var file = CleanFile();
+        file.Purpose = StoredFilePurpose.Document;
+
+        var result = file.Publish(Now);
+
+        Assert.Equal(StoredFileErrors.NotPublicMedia, result.Error);
+        Assert.Null(file.PublicKey);
+    }
+
+    [Fact]
+    public async Task PublishFile_CopiesNothingForAPrivateDocument()
+    {
+        var (files, storage, unitOfWork) = Build();
+        var file = CleanFile(files, storage);
+        file.Purpose = StoredFilePurpose.Document;
+
+        var result = await PublishHandler(files, storage, unitOfWork).Handle(new PublishFileCommand(file.Id), default);
+
+        Assert.Equal(StoredFileErrors.NotPublicMedia, result.Error);
+        Assert.Empty(storage.PublicObjects);
+        Assert.Equal(0, unitOfWork.SaveCount);
+    }
+
+    [Fact]
     public void Delete_TakesThePublicKeyAway()
     {
         var file = CleanFile();
@@ -222,7 +248,7 @@ public class PublicFileTests
 
     private static StoredFile CleanFile(FakeStoredFileRepository files, FakeObjectStorage storage)
     {
-        var file = files.Add(Guid.NewGuid(), "cover.png", "image/png");
+        var file = files.Add(Guid.NewGuid(), "cover.png", "image/png", purpose: StoredFilePurpose.PublicMedia);
         file.CompleteUpload(64, Now.AddMinutes(-5));
         file.MarkClean(new string('a', 64), Now.AddMinutes(-4));
         storage.Objects[file.ObjectKey] = FileSamples.Png;

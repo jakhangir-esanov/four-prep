@@ -35,6 +35,18 @@ internal sealed class StoredFileRepository(StorageDbContext dbContext) : IStored
             .ToListAsync(cancellationToken);
     }
 
+    public async Task<IReadOnlySet<string>> GetPublicKeysInUseAsync(
+        IReadOnlyCollection<string> publicKeys,
+        CancellationToken cancellationToken = default)
+    {
+        var inUse = await dbContext.StoredFiles
+            .Where(x => x.PublicKey != null && publicKeys.Contains(x.PublicKey))
+            .Select(x => x.PublicKey!)
+            .ToListAsync(cancellationToken);
+
+        return inUse.ToHashSet();
+    }
+
     public async Task<int> CountPendingAsync(Guid uploadedByUserId, CancellationToken cancellationToken = default)
     {
         return await dbContext.StoredFiles.CountAsync(

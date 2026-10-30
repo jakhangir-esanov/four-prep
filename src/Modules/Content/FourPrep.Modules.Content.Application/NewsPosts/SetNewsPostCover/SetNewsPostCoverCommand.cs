@@ -1,6 +1,7 @@
 namespace FourPrep.Modules.Content.Application.NewsPosts.SetNewsPostCover;
 
 using FourPrep.Common.Domain;
+using Microsoft.Extensions.Logging;
 using FourPrep.Common.Application.Clock;
 using FourPrep.Common.Application.Messaging;
 using FourPrep.Modules.Content.Domain.NewsPosts;
@@ -15,7 +16,8 @@ internal sealed class SetNewsPostCoverCommandHandler(
     ICurrentUser currentUser,
     IStorageService storageService,
     INewsPostRepository repository,
-    IDateTimeProvider dateTimeProvider) : ICommandHandler<SetNewsPostCoverCommand>
+    IDateTimeProvider dateTimeProvider,
+    ILogger<SetNewsPostCoverCommandHandler> logger) : ICommandHandler<SetNewsPostCoverCommand>
 {
     private static readonly string[] CoverContentTypes = ["image/jpeg", "image/png"];
 
@@ -44,16 +46,69 @@ internal sealed class SetNewsPostCoverCommandHandler(
             return publicUrl;
         }
 
-        if (newsPost.CoverFileId is { } previousCoverFileId)
+        try
         {
-            await storageService.UnpublishFileAsync(previousCoverFileId, cancellationToken);
+            if (newsPost.CoverFileId is { } previousCoverFileId)
+            {
+                await storageService.UnpublishFileAsync(previousCoverFileId, cancellationToken);
+            }
+
+            newsPost.SetCover(request.FileId, publicUrl.Data, dateTimeProvider.UtcNow);
+
+            await unitOfWork.SaveChangesAsync(cancellationToken);
+        }
+        catch
+        {
+            await TakeOfflineUnlessInUseAsync(request.FileId, newsPost.Id);
+            throw;
         }
 
-        newsPost.SetCover(request.FileId, publicUrl.Data, dateTimeProvider.UtcNow);
-
-        await unitOfWork.SaveChangesAsync(cancellationToken);
-
         return Result.Success();
+    }
+
+    private async Task TakeOfflineUnlessInUseAsync(Guid fileId, Guid newsPostId)
+    {
+        try
+        {
+            if (await IsInUseElsewhereAsync(fileId, newsPostId))
+            {
+                return;
+            }
+
+            var unpublished = await storageService.UnpublishFileAsync(fileId, CancellationToken.None);
+            if (unpublished.IsFailure)
+            {
+                logger.LogError(
+                    "Cover {FileId} stays public after news post {NewsPostId} failed to save: {ErrorCode}",
+                    fileId,
+                    newsPostId,
+                    unpublished.Error.Code);
+            }
+        }
+        catch (Exception exception)
+        {
+            logger.LogError(
+                exception,
+                "Cover {FileId} stays public after news post {NewsPostId} failed to save",
+                fileId,
+                newsPostId);
+        }
+    }
+
+    private async Task<bool> IsInUseElsewhereAsync(Guid fileId, Guid newsPostId)
+    {
+        try
+        {
+            return await repository.IsCoverInUseAsync(fileId, newsPostId, CancellationToken.None);
+        }
+        catch (Exception exception)
+        {
+            logger.LogWarning(
+                exception,
+                "Could not tell whether cover {FileId} belongs to another news post; taking it offline",
+                fileId);
+            return false;
+        }
     }
 
     private async Task<Result> CheckCoverAsync(Guid fileId, Guid newsPostId, CancellationToken cancellationToken)

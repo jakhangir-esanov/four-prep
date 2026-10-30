@@ -65,6 +65,10 @@ namespace FourPrep.Modules.Storage.Infrastructure.Database.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("published_on_utc");
 
+                    b.Property<int>("Purpose")
+                        .HasColumnType("integer")
+                        .HasColumnName("purpose");
+
                     b.Property<int>("ScanAttempts")
                         .HasColumnType("integer")
                         .HasColumnName("scan_attempts");

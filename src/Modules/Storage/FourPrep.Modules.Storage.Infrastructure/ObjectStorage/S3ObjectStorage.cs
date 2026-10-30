@@ -4,11 +4,13 @@ using System.Net;
 using Amazon.S3;
 using Amazon.S3.Model;
 using Microsoft.Extensions.Options;
+using FourPrep.Modules.Storage.Domain.StoredFiles;
 using FourPrep.Modules.Storage.Application.Abstractions.ObjectStorage;
 
 internal sealed class S3ObjectStorage(IAmazonS3 s3, IOptions<S3StorageOptions> options) : IObjectStorage
 {
     private const string PublicCacheControl = "public, max-age=86400";
+    private const int ListPageSize = 1000;
 
     private readonly S3StorageOptions _options = options.Value;
 
@@ -129,6 +131,27 @@ internal sealed class S3ObjectStorage(IAmazonS3 s3, IOptions<S3StorageOptions> o
     public async Task DeletePublicAsync(string publicKey, CancellationToken cancellationToken = default)
     {
         await s3.DeleteObjectAsync(_options.PublicBucket, publicKey, cancellationToken);
+    }
+
+    public async Task<PublicObjectPage> ListPublicAsync(string? pageToken, CancellationToken cancellationToken = default)
+    {
+        var response = await s3.ListObjectsV2Async(
+            new ListObjectsV2Request
+            {
+                BucketName = _options.PublicBucket,
+                Prefix = StoredFile.PublicKeyPrefix,
+                ContinuationToken = pageToken,
+                MaxKeys = ListPageSize
+            },
+            cancellationToken);
+
+        var objects = (response.S3Objects ?? [])
+            .Select(s3Object => new PublicObject(
+                s3Object.Key,
+                (s3Object.LastModified ?? DateTime.MinValue).ToUniversalTime()))
+            .ToList();
+
+        return new PublicObjectPage(objects, response.IsTruncated == true ? response.NextContinuationToken : null);
     }
 
     public string GetPublicUrl(string publicKey) => $"{_options.PublicBaseUrl.TrimEnd('/')}/{publicKey}";

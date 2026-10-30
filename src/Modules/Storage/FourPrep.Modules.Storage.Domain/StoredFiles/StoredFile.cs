@@ -12,9 +12,10 @@ public sealed class StoredFile
 
     public static readonly TimeSpan DownloadWindow = TimeSpan.FromMinutes(5);
 
+    public const string PublicKeyPrefix = "public/";
+
     private const string UploadKeyPrefix = "uploads/";
     private const string ObjectKeyPrefix = "docs/";
-    private const string PublicKeyPrefix = "public/";
 
     public Guid Id { get; set; }
     public string UploadKey { get; set; } = string.Empty;
@@ -22,6 +23,7 @@ public sealed class StoredFile
     public string FileName { get; set; } = string.Empty;
     public string ContentType { get; set; } = string.Empty;
     public long SizeBytes { get; set; }
+    public StoredFilePurpose Purpose { get; set; }
     public Guid UploadedByUserId { get; set; }
     public StoredFileStatus Status { get; set; }
     public ScanStatus ScanStatus { get; set; }
@@ -40,6 +42,7 @@ public sealed class StoredFile
         string fileName,
         string contentType,
         long sizeBytes,
+        StoredFilePurpose purpose,
         Guid uploadedByUserId,
         DateTime utcNow)
     {
@@ -51,6 +54,7 @@ public sealed class StoredFile
             FileName = fileName,
             ContentType = contentType,
             SizeBytes = sizeBytes,
+            Purpose = purpose,
             UploadedByUserId = uploadedByUserId,
             Status = StoredFileStatus.Pending,
             CreatedOnUtc = utcNow
@@ -128,6 +132,11 @@ public sealed class StoredFile
         if (Status != StoredFileStatus.Uploaded)
         {
             return Result.Failure(StoredFileErrors.NotFound);
+        }
+
+        if (Purpose != StoredFilePurpose.PublicMedia)
+        {
+            return Result.Failure(StoredFileErrors.NotPublicMedia);
         }
 
         switch (ScanStatus)

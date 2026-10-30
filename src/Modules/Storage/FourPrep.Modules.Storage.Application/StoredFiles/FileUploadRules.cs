@@ -1,5 +1,7 @@
 namespace FourPrep.Modules.Storage.Application.StoredFiles;
 
+using FourPrep.Modules.Storage.Domain.StoredFiles;
+
 internal static class FileUploadRules
 {
     public const int HeaderLength = 16;
@@ -19,10 +21,16 @@ internal static class FileUploadRules
         [Heic] = [".heic"]
     };
 
+    private static readonly string[] PublicMediaTypes = [Jpeg, Png];
+
     private static readonly string[] HeicBrands = ["heic", "heix", "heim", "heis", "mif1", "msf1"];
 
     public static bool IsAllowedType(string? contentType) =>
         contentType is not null && ExtensionsByType.ContainsKey(contentType.Trim());
+
+    public static bool IsAllowedFor(StoredFilePurpose purpose, string? contentType) =>
+        IsAllowedType(contentType) &&
+        (purpose != StoredFilePurpose.PublicMedia || PublicMediaTypes.Contains(contentType!.Trim(), StringComparer.OrdinalIgnoreCase));
 
     public static bool MatchesExtension(string? fileName, string? contentType) =>
         IsAllowedType(contentType) &&

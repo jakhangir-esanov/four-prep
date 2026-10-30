@@ -17,6 +17,11 @@ internal sealed class RecurringJobsRegistration(IRecurringJobManager recurringJo
             job => job.RunAsync(CancellationToken.None),
             Cron.Minutely());
 
+        recurringJobManager.AddOrUpdate<RemoveOrphanedPublicCopiesJob>(
+            RemoveOrphanedPublicCopiesJob.JobId,
+            job => job.RunAsync(CancellationToken.None),
+            Cron.Daily());
+
         return Task.CompletedTask;
     }
 

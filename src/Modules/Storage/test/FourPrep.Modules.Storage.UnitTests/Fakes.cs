@@ -36,9 +36,14 @@ internal sealed class FakeStoredFileRepository : IStoredFileRepository
 {
     public List<StoredFile> Files { get; } = [];
 
-    public StoredFile Add(Guid uploadedByUserId, string fileName = "passport.pdf", string contentType = "application/pdf", long sizeBytes = 64)
+    public StoredFile Add(
+        Guid uploadedByUserId,
+        string fileName = "passport.pdf",
+        string contentType = "application/pdf",
+        long sizeBytes = 64,
+        StoredFilePurpose purpose = StoredFilePurpose.Document)
     {
-        var storedFile = StoredFile.Create(fileName, contentType, sizeBytes, uploadedByUserId, new DateTime(2026, 10, 29, 8, 0, 0, DateTimeKind.Utc));
+        var storedFile = StoredFile.Create(fileName, contentType, sizeBytes, purpose, uploadedByUserId, new DateTime(2026, 10, 29, 8, 0, 0, DateTimeKind.Utc));
         Files.Add(storedFile);
         return storedFile;
     }
@@ -56,6 +61,12 @@ internal sealed class FakeStoredFileRepository : IStoredFileRepository
     public Task<IReadOnlyList<StoredFile>> GetAwaitingScanAsync(int limit, CancellationToken cancellationToken = default) =>
         Task.FromResult<IReadOnlyList<StoredFile>>(
             [.. Files.Where(x => x.IsAwaitingScan).OrderBy(x => x.ScanAttempts).ThenBy(x => x.UploadedOnUtc).Take(limit)]);
+
+    public Task<IReadOnlySet<string>> GetPublicKeysInUseAsync(
+        IReadOnlyCollection<string> publicKeys,
+        CancellationToken cancellationToken = default) =>
+        Task.FromResult<IReadOnlySet<string>>(
+            Files.Where(x => x.PublicKey is not null && publicKeys.Contains(x.PublicKey)).Select(x => x.PublicKey!).ToHashSet());
 
     public Task<int> CountPendingAsync(Guid uploadedByUserId, CancellationToken cancellationToken = default) =>
         Task.FromResult(Files.Count(x => x.UploadedByUserId == uploadedByUserId && x.Status == StoredFileStatus.Pending));
@@ -105,17 +116,64 @@ internal sealed class FakeObjectStorage : IObjectStorage
 
     public Dictionary<string, (byte[] Bytes, string ContentType)> PublicObjects { get; } = [];
 
+    public Dictionary<string, DateTime> PublicModifiedOnUtc { get; } = [];
+
     public int PublicCopies { get; private set; }
+
+    public int PublicPageSize { get; set; } = 1000;
+
+    public int PublicListCalls { get; private set; }
+
+    public DateTime CopiedOnUtc { get; set; } = new FakeClock().UtcNow;
 
     public Task CopyToPublicAsync(string objectKey, string publicKey, string contentType, CancellationToken cancellationToken = default)
     {
         PublicCopies++;
         PublicObjects[publicKey] = (Objects[objectKey], contentType);
+        PublicModifiedOnUtc[publicKey] = CopiedOnUtc;
         return Task.CompletedTask;
     }
 
+    public void AddPublicObject(string publicKey, DateTime modifiedOnUtc)
+    {
+        PublicObjects[publicKey] = (FileSamples.Png, "image/png");
+        PublicModifiedOnUtc[publicKey] = modifiedOnUtc;
+    }
+
+    public Task<PublicObjectPage> ListPublicAsync(string? pageToken, CancellationToken cancellationToken = default)
+    {
+        PublicListCalls++;
+        if (PublicListOverride is not null)
+        {
+            return Task.FromResult(PublicListOverride(pageToken));
+        }
+
+        var keys = PublicObjects.Keys.Order(StringComparer.Ordinal).ToList();
+        var start = pageToken is null ? 0 : keys.FindIndex(key => string.CompareOrdinal(key, pageToken) > 0);
+        if (start < 0)
+        {
+            start = keys.Count;
+        }
+
+        var pageKeys = keys.Skip(start).Take(PublicPageSize).ToList();
+        var hasMore = start + pageKeys.Count < keys.Count;
+
+        return Task.FromResult(new PublicObjectPage(
+            [.. pageKeys.Select(key => new PublicObject(key, PublicModifiedOnUtc[key]))],
+            hasMore ? pageKeys[^1] : null));
+    }
+
+    public HashSet<string> UndeletablePublicKeys { get; } = [];
+
+    public Func<string?, PublicObjectPage>? PublicListOverride { get; set; }
+
     public Task DeletePublicAsync(string publicKey, CancellationToken cancellationToken = default)
     {
+        if (UndeletablePublicKeys.Contains(publicKey))
+        {
+            throw new IOException("access denied");
+        }
+
         PublicObjects.Remove(publicKey);
         return Task.CompletedTask;
     }

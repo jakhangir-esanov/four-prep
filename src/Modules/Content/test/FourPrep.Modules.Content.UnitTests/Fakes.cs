@@ -23,8 +23,19 @@ internal sealed class FakeUnitOfWork : IUnitOfWork
 {
     public int SaveCount { get; private set; }
 
+    public Action? BeforeSave { get; set; }
+
+    public Exception? SaveException { get; set; }
+
     public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
+        BeforeSave?.Invoke();
+
+        if (SaveException is not null)
+        {
+            throw SaveException;
+        }
+
         SaveCount++;
         return Task.FromResult(0);
     }
@@ -51,8 +62,17 @@ internal sealed class FakeNewsPostRepository : INewsPostRepository
     public Task<bool> IsSlugTakenAsync(string slug, Guid? exceptNewsPostId, CancellationToken cancellationToken = default) =>
         Task.FromResult(NewsPosts.Any(x => x.Slug == slug && x.Id != exceptNewsPostId));
 
-    public Task<bool> IsCoverInUseAsync(Guid fileId, Guid exceptNewsPostId, CancellationToken cancellationToken = default) =>
-        Task.FromResult(NewsPosts.Any(x => x.CoverFileId == fileId && x.Id != exceptNewsPostId));
+    public Exception? CoverInUseException { get; set; }
+
+    public Task<bool> IsCoverInUseAsync(Guid fileId, Guid exceptNewsPostId, CancellationToken cancellationToken = default)
+    {
+        if (CoverInUseException is not null)
+        {
+            throw CoverInUseException;
+        }
+
+        return Task.FromResult(NewsPosts.Any(x => x.CoverFileId == fileId && x.Id != exceptNewsPostId));
+    }
 
     public void Insert(NewsPost newsPost) => NewsPosts.Add(newsPost);
 

@@ -8,7 +8,11 @@ using FourPrep.Modules.Storage.Application.Abstractions.Data;
 using FourPrep.Modules.Storage.Application.Abstractions.ObjectStorage;
 using FourPrep.Modules.Storage.Application.Abstractions.Authentication;
 
-public sealed record CreateUploadUrlCommand(string FileName, string ContentType, long SizeBytes) : ICommand<UploadUrlResponse>;
+public sealed record CreateUploadUrlCommand(
+    string FileName,
+    string ContentType,
+    long SizeBytes,
+    StoredFilePurpose Purpose = StoredFilePurpose.Document) : ICommand<UploadUrlResponse>;
 
 internal sealed class CreateUploadUrlCommandHandler(
     IUnitOfWork unitOfWork,
@@ -32,6 +36,7 @@ internal sealed class CreateUploadUrlCommandHandler(
             FileUploadRules.SafeFileName(request.FileName),
             FileUploadRules.NormalizedType(request.ContentType),
             request.SizeBytes,
+            request.Purpose,
             currentUser.UserId,
             utcNow);
 

@@ -24,6 +24,7 @@ public class StoredFileCommandHandlerTests
         Assert.Equal("application/pdf", file.ContentType);
         Assert.Equal(StoredFileStatus.Pending, file.Status);
         Assert.Equal(OwnerId, file.UploadedByUserId);
+        Assert.Equal(StoredFilePurpose.Document, file.Purpose);
         Assert.StartsWith("uploads/", file.UploadKey);
         Assert.StartsWith("docs/", file.ObjectKey);
         Assert.DoesNotContain("Passport", file.UploadKey + file.ObjectKey, StringComparison.OrdinalIgnoreCase);
@@ -200,9 +201,9 @@ public class StoredFileCommandHandlerTests
     public async Task RemoveAbandonedUploads_DeletesBothKeysOfFilesUnconfirmedForAnHour()
     {
         var (files, storage, unitOfWork) = Build();
-        var old = StoredFile.Create("old.pdf", "application/pdf", 64, OwnerId, new FakeClock().UtcNow.AddHours(-2));
-        var recent = StoredFile.Create("new.pdf", "application/pdf", 64, OwnerId, new FakeClock().UtcNow.AddMinutes(-30));
-        var confirmed = StoredFile.Create("done.pdf", "application/pdf", 64, OwnerId, new FakeClock().UtcNow.AddDays(-2));
+        var old = StoredFile.Create("old.pdf", "application/pdf", 64, StoredFilePurpose.Document, OwnerId, new FakeClock().UtcNow.AddHours(-2));
+        var recent = StoredFile.Create("new.pdf", "application/pdf", 64, StoredFilePurpose.Document, OwnerId, new FakeClock().UtcNow.AddMinutes(-30));
+        var confirmed = StoredFile.Create("done.pdf", "application/pdf", 64, StoredFilePurpose.Document, OwnerId, new FakeClock().UtcNow.AddDays(-2));
         confirmed.CompleteUpload(64, new FakeClock().UtcNow.AddDays(-2));
         files.Files.AddRange([old, recent, confirmed]);
         storage.Objects[old.UploadKey] = FileSamples.Pdf;
@@ -225,7 +226,7 @@ public class StoredFileCommandHandlerTests
         var (files, storage, unitOfWork) = Build();
         for (var i = 0; i < RemoveAbandonedUploadsCommandHandler.BatchSize + 5; i++)
         {
-            files.Files.Add(StoredFile.Create("old.pdf", "application/pdf", 64, OwnerId, new FakeClock().UtcNow.AddHours(-2)));
+            files.Files.Add(StoredFile.Create("old.pdf", "application/pdf", 64, StoredFilePurpose.Document, OwnerId, new FakeClock().UtcNow.AddHours(-2)));
         }
 
         var result = await new RemoveAbandonedUploadsCommandHandler(unitOfWork, storage, files, new FakeClock())

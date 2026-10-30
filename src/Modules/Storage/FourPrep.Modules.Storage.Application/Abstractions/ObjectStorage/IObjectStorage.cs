@@ -20,5 +20,7 @@ public interface IObjectStorage
 
     Task DeletePublicAsync(string publicKey, CancellationToken cancellationToken = default);
 
+    Task<PublicObjectPage> ListPublicAsync(string? pageToken, CancellationToken cancellationToken = default);
+
     string GetPublicUrl(string publicKey);
 }

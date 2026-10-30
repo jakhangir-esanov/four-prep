@@ -1,6 +1,7 @@
 namespace FourPrep.Modules.Content.UnitTests.NewsPosts;
 
 using FourPrep.Common.Domain;
+using Microsoft.Extensions.Logging.Abstractions;
 using FourPrep.Modules.Content.Domain.NewsPosts;
 using FourPrep.Modules.Content.Application.NewsPosts.SetNewsPostCover;
 using FourPrep.Modules.Content.Application.NewsPosts.RemoveNewsPostCover;
@@ -142,6 +143,68 @@ public class NewsPostCoverTests
     }
 
     [Fact]
+    public async Task SetCover_TakesTheNewImageOfflineWhenThePostCannotBeSaved()
+    {
+        var (newsPosts, storage, unitOfWork) = Build();
+        var newsPost = newsPosts.Add();
+        var file = storage.AddFile(EditorId);
+        unitOfWork.SaveException = new InvalidOperationException("database is down");
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            SetHandler(newsPosts, storage, unitOfWork).Handle(new SetNewsPostCoverCommand(newsPost.Id, file.Id), default));
+
+        Assert.DoesNotContain(file.Id, storage.Published);
+        Assert.Equal([file.Id], storage.Unpublished);
+    }
+
+    [Fact]
+    public async Task SetCover_TakesTheNewImageOfflineEvenWhenItCannotCheckOtherPosts()
+    {
+        var (newsPosts, storage, unitOfWork) = Build();
+        var newsPost = newsPosts.Add();
+        var file = storage.AddFile(EditorId);
+        unitOfWork.BeforeSave = () => newsPosts.CoverInUseException = new InvalidOperationException("database is down");
+        unitOfWork.SaveException = new InvalidOperationException("database is down");
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            SetHandler(newsPosts, storage, unitOfWork).Handle(new SetNewsPostCoverCommand(newsPost.Id, file.Id), default));
+
+        Assert.Equal([file.Id], storage.Unpublished);
+    }
+
+    [Fact]
+    public async Task SetCover_ReportsTheSaveFailureWhenTakingTheImageOfflineFailsToo()
+    {
+        var (newsPosts, storage, unitOfWork) = Build();
+        var newsPost = newsPosts.Add();
+        var file = storage.AddFile(EditorId);
+        unitOfWork.BeforeSave = () => storage.UnpublishException = new IOException("storage is down");
+        unitOfWork.SaveException = new InvalidOperationException("database is down");
+
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            SetHandler(newsPosts, storage, unitOfWork).Handle(new SetNewsPostCoverCommand(newsPost.Id, file.Id), default));
+
+        Assert.Equal("database is down", exception.Message);
+    }
+
+    [Fact]
+    public async Task SetCover_KeepsTheImageOnlineWhenAnotherPostTookItFirst()
+    {
+        var (newsPosts, storage, unitOfWork) = Build();
+        var newsPost = newsPosts.Add();
+        var file = storage.AddFile(EditorId);
+        unitOfWork.BeforeSave = () =>
+            newsPosts.Add("other-news").SetCover(file.Id, FakeStorageService.PublicUrl(file.Id), Now);
+        unitOfWork.SaveException = new InvalidOperationException("duplicate key");
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            SetHandler(newsPosts, storage, unitOfWork).Handle(new SetNewsPostCoverCommand(newsPost.Id, file.Id), default));
+
+        Assert.Contains(file.Id, storage.Published);
+        Assert.Empty(storage.Unpublished);
+    }
+
+    [Fact]
     public async Task SetCover_ReportsAnUnknownPost()
     {
         var (newsPosts, storage, unitOfWork) = Build();
@@ -237,7 +300,13 @@ public class NewsPostCoverTests
         FakeNewsPostRepository newsPosts,
         FakeStorageService storage,
         FakeUnitOfWork unitOfWork) =>
-        new(unitOfWork, new FakeCurrentUser(EditorId), storage, newsPosts, new FakeClock());
+        new(
+            unitOfWork,
+            new FakeCurrentUser(EditorId),
+            storage,
+            newsPosts,
+            new FakeClock(),
+            NullLogger<SetNewsPostCoverCommandHandler>.Instance);
 
     private static void AssertNothingChanged(NewsPost newsPost, FakeStorageService storage, FakeUnitOfWork unitOfWork)
     {
