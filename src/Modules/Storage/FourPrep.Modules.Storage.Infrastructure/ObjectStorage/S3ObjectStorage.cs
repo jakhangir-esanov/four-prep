@@ -8,6 +8,8 @@ using FourPrep.Modules.Storage.Application.Abstractions.ObjectStorage;
 
 internal sealed class S3ObjectStorage(IAmazonS3 s3, IOptions<S3StorageOptions> options) : IObjectStorage
 {
+    private const string PublicCacheControl = "public, max-age=86400";
+
     private readonly S3StorageOptions _options = options.Value;
 
     private Protocol UrlProtocol =>
@@ -102,4 +104,32 @@ internal sealed class S3ObjectStorage(IAmazonS3 s3, IOptions<S3StorageOptions> o
     {
         await s3.DeleteObjectAsync(_options.DocumentsBucket, objectKey, cancellationToken);
     }
+
+    public async Task CopyToPublicAsync(
+        string objectKey,
+        string publicKey,
+        string contentType,
+        CancellationToken cancellationToken = default)
+    {
+        var request = new CopyObjectRequest
+        {
+            SourceBucket = _options.DocumentsBucket,
+            SourceKey = objectKey,
+            DestinationBucket = _options.PublicBucket,
+            DestinationKey = publicKey,
+            ContentType = contentType,
+            MetadataDirective = S3MetadataDirective.REPLACE
+        };
+
+        request.Headers.CacheControl = PublicCacheControl;
+
+        await s3.CopyObjectAsync(request, cancellationToken);
+    }
+
+    public async Task DeletePublicAsync(string publicKey, CancellationToken cancellationToken = default)
+    {
+        await s3.DeleteObjectAsync(_options.PublicBucket, publicKey, cancellationToken);
+    }
+
+    public string GetPublicUrl(string publicKey) => $"{_options.PublicBaseUrl.TrimEnd('/')}/{publicKey}";
 }

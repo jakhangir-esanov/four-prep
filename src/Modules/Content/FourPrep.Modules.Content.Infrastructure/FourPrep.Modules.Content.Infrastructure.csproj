@@ -4,5 +4,6 @@
     <ProjectReference Include="..\..\..\Common\FourPrep.Common.Presentation\FourPrep.Common.Presentation.csproj" />
     <ProjectReference Include="..\FourPrep.Modules.Content.Application\FourPrep.Modules.Content.Application.csproj" />
     <ProjectReference Include="..\FourPrep.Modules.Content.Presentation\FourPrep.Modules.Content.Presentation.csproj" />
+    <ProjectReference Include="..\FourPrep.Modules.Content.Storage\FourPrep.Modules.Content.Storage.csproj" />
   </ItemGroup>
 </Project>

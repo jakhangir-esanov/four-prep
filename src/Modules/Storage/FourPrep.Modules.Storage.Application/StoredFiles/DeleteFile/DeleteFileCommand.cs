@@ -30,6 +30,11 @@ internal sealed class DeleteFileCommandHandler(
 
         await objectStorage.DeleteAsync(storedFile.UploadKey, cancellationToken);
         await objectStorage.DeleteAsync(storedFile.ObjectKey, cancellationToken);
+        if (storedFile.PublicKey is not null)
+        {
+            await objectStorage.DeletePublicAsync(storedFile.PublicKey, cancellationToken);
+        }
+
         storedFile.Delete(dateTimeProvider.UtcNow);
 
         await unitOfWork.SaveChangesAsync(cancellationToken);

@@ -56,6 +56,15 @@ namespace FourPrep.Modules.Storage.Infrastructure.Database.Migrations
                         .HasColumnType("character varying(100)")
                         .HasColumnName("object_key");
 
+                    b.Property<string>("PublicKey")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("public_key");
+
+                    b.Property<DateTimeOffset?>("PublishedOnUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("published_on_utc");
+
                     b.Property<int>("ScanAttempts")
                         .HasColumnType("integer")
                         .HasColumnName("scan_attempts");
@@ -101,6 +110,10 @@ namespace FourPrep.Modules.Storage.Infrastructure.Database.Migrations
                     b.HasIndex("ObjectKey")
                         .IsUnique()
                         .HasDatabaseName("ix_stored_files_object_key");
+
+                    b.HasIndex("PublicKey")
+                        .IsUnique()
+                        .HasDatabaseName("ix_stored_files_public_key");
 
                     b.HasIndex("UploadKey")
                         .IsUnique()

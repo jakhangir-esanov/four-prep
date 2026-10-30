@@ -50,6 +50,7 @@ public static class StorageModule
         services.AddOptions<S3StorageOptions>()
             .Bind(configuration.GetSection(S3StorageOptions.SectionName))
             .Validate(S3StorageOptions.IsComplete, S3StorageOptions.IncompleteMessage)
+            .Validate(S3StorageOptions.KeepsDocumentsPrivate, S3StorageOptions.DocumentsNotPrivateMessage)
             .ValidateOnStart();
         services.AddSingleton<IAmazonS3>(sp => CreateS3Client(sp.GetRequiredService<IOptions<S3StorageOptions>>().Value));
         services.AddSingleton<IObjectStorage, S3ObjectStorage>();

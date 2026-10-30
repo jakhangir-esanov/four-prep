@@ -15,10 +15,12 @@ internal sealed class StoredFileConfiguration : IEntityTypeConfiguration<StoredF
         builder.Property(x => x.FileName).HasMaxLength(255).IsRequired();
         builder.Property(x => x.ContentType).HasMaxLength(100).IsRequired();
         builder.Property(x => x.Sha256).HasMaxLength(64);
+        builder.Property(x => x.PublicKey).HasMaxLength(100);
         builder.Property(x => x.CreatedOnUtc).IsRequired();
 
         builder.HasIndex(x => x.UploadKey).IsUnique();
         builder.HasIndex(x => x.ObjectKey).IsUnique();
+        builder.HasIndex(x => x.PublicKey).IsUnique();
         builder.HasIndex(x => x.UploadedByUserId);
         builder.HasIndex(x => new { x.Status, x.CreatedOnUtc });
         builder.HasIndex(x => new { x.Status, x.ScanStatus });

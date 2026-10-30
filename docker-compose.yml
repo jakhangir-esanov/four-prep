@@ -42,12 +42,14 @@ services:
       - ./seaweedfs/s3.json:/etc/seaweedfs/s3.json:ro
       - seaweedfs-data:/data
 
-  # Creates the private documents bucket once SeaweedFS is up; harmless if it already exists.
+  # Creates the private documents bucket and the public bucket (news covers and other public
+  # images, readable without a signature through the anonymous identity in s3.json) once
+  # SeaweedFS is up; harmless if they already exist.
   seaweedfs-buckets:
     image: chrislusf/seaweedfs:3.85
     container_name: fourprep-storage-buckets
     entrypoint: /bin/sh
-    command: -c "until echo 's3.bucket.create -name fourprep-documents' | weed shell -master=seaweedfs:9333 -filer=seaweedfs:8888 2>&1 | grep -q 'created bucket'; do sleep 3; done"
+    command: -c "for bucket in fourprep-documents fourprep-public; do until echo \"s3.bucket.create -name $$bucket\" | weed shell -master=seaweedfs:9333 -filer=seaweedfs:8888 2>&1 | grep -q 'created bucket'; do sleep 3; done; done"
     depends_on:
       - seaweedfs
     restart: 'no'

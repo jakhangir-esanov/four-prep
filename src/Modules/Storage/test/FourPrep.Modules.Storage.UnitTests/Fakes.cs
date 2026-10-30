@@ -102,6 +102,25 @@ internal sealed class FakeObjectStorage : IObjectStorage
         Deleted.Add(objectKey);
         return Task.CompletedTask;
     }
+
+    public Dictionary<string, (byte[] Bytes, string ContentType)> PublicObjects { get; } = [];
+
+    public int PublicCopies { get; private set; }
+
+    public Task CopyToPublicAsync(string objectKey, string publicKey, string contentType, CancellationToken cancellationToken = default)
+    {
+        PublicCopies++;
+        PublicObjects[publicKey] = (Objects[objectKey], contentType);
+        return Task.CompletedTask;
+    }
+
+    public Task DeletePublicAsync(string publicKey, CancellationToken cancellationToken = default)
+    {
+        PublicObjects.Remove(publicKey);
+        return Task.CompletedTask;
+    }
+
+    public string GetPublicUrl(string publicKey) => $"https://cdn.test/{publicKey}";
 }
 
 internal sealed class FakeVirusScanner : IVirusScanner

@@ -105,6 +105,7 @@
     <Project Path="src/Modules/Content/FourPrep.Modules.Content.Domain/FourPrep.Modules.Content.Domain.csproj" />
     <Project Path="src/Modules/Content/FourPrep.Modules.Content.Infrastructure/FourPrep.Modules.Content.Infrastructure.csproj" />
     <Project Path="src/Modules/Content/FourPrep.Modules.Content.Presentation/FourPrep.Modules.Content.Presentation.csproj" />
+    <Project Path="src/Modules/Content/FourPrep.Modules.Content.Storage/FourPrep.Modules.Content.Storage.csproj" />
   </Folder>
   <Folder Name="/src/Modules/Content/test/">
     <Project Path="src/Modules/Content/test/FourPrep.Modules.Content.ArchitectureTests/FourPrep.Modules.Content.ArchitectureTests.csproj" />

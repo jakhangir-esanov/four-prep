@@ -9,6 +9,10 @@
         }
       ],
       "actions": ["Read", "Write", "List", "Tagging"]
+    },
+    {
+      "name": "anonymous",
+      "actions": ["Read:fourprep-public"]
     }
   ]
 }

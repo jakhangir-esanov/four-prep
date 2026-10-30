@@ -1,11 +1,15 @@
 namespace FourPrep.Modules.Content.Infrastructure;
 
 using Microsoft.EntityFrameworkCore;
+using FourPrep.Modules.Content.Storage;
 using Microsoft.Extensions.Configuration;
 using FourPrep.Common.Presentation.Endpoints;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.Extensions.DependencyInjection;
+using FourPrep.Modules.Content.Domain.NewsPosts;
 using FourPrep.Modules.Content.Infrastructure.Database;
+using FourPrep.Modules.Content.Infrastructure.NewsPosts;
+using FourPrep.Modules.Content.Application.Abstractions.Storage;
 using FourPrep.Modules.Content.Application.Abstractions.Data;
 using FourPrep.Modules.Content.Infrastructure.Authentication;
 using FourPrep.Modules.Content.Application.Abstractions.Authentication;
@@ -34,5 +38,8 @@ public static class ContentModule
         services.AddScoped<ICurrentUser, CurrentUser>();
 
         services.AddScoped<IUnitOfWork>(sp => sp.GetRequiredService<ContentDbContext>());
+
+        services.AddScoped<INewsPostRepository, NewsPostRepository>();
+        services.AddScoped<IStorageService, StorageService>();
     }
 }

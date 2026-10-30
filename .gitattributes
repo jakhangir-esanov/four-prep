@@ -3,6 +3,10 @@
 ###############################################################################
 * text=auto
 
+# Config files mounted into Linux containers must keep LF endings on Windows checkouts too:
+# clamd refuses a clamd.conf with CRLF ("Incorrect argument format for option Foreground").
+clamav/*.conf text eol=lf
+
 ###############################################################################
 # Set default behavior for command prompt diff.
 #

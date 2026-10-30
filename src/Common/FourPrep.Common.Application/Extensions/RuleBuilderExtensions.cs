@@ -40,9 +40,14 @@ public static class RuleBuilderExtensions
     public static IRuleBuilderOptions<T, IReadOnlyDictionary<string, string>?> LocalizedText<T>(
         this IRuleBuilder<T, IReadOnlyDictionary<string, string>?> rule,
         int maxLength) =>
-        rule.Must(text => text is null || text.Keys.All(Locales.IsSupported))
-            .WithError(LocalizationErrors.UnsupportedLocale)
-            .Must(text => text is null || text.Values.All(value => value is null || value.Trim().Length <= maxLength))
+        rule.LocalizedTextInAnyLanguage(maxLength)
             .Must(LocalizedTexts.HasEnglishWhenTranslated)
             .WithError(LocalizationErrors.MissingEnglishText);
+
+    public static IRuleBuilderOptions<T, IReadOnlyDictionary<string, string>?> LocalizedTextInAnyLanguage<T>(
+        this IRuleBuilder<T, IReadOnlyDictionary<string, string>?> rule,
+        int maxLength) =>
+        rule.Must(text => text is null || text.Keys.All(Locales.IsSupported))
+            .WithError(LocalizationErrors.UnsupportedLocale)
+            .Must(text => text is null || text.Values.All(value => value is null || value.Trim().Length <= maxLength));
 }

@@ -82,7 +82,7 @@ Modules in `src/Modules/`:
 | Auth | Keycloak accounts, login, sessions, own account, staff accounts | implemented |
 | Student | profiles, parent links, mentors; later the student's stage and path, test scores, personal documents and offboarding | implemented (profiles, parent links, mentors) |
 | Catalogue | universities, programs, admission requirements, costs, deadlines, scholarships, destination countries; every fact carries its source | implemented (manual entry, CSV import, public search) |
-| Content | news, results, partners, About, public staff profiles | skeleton |
+| Content | news, results, partners, About, public staff profiles | implemented (news posts with covers, publish and public reads) |
 | Academy | courses, class groups, enrolments, attendance, mock scores, placement tests | implemented (courses, class groups, public course pages, enrolment and waitlist with manual activation) |
 | Admission | academy application, university applications, portal accounts, essays, recommendations, university offers, visa | skeleton |
 | Agreement | products, offers and discounts, agreements, signatures | skeleton |
@@ -91,7 +91,7 @@ Modules in `src/Modules/`:
 | AI | AI Counselor, plan wizard and My Plan, weekly check-in | skeleton |
 | Chat | threads and messages | skeleton |
 | Notification | in-app, email and Telegram notifications | skeleton |
-| Storage | file bytes only: objects, signed upload and download links, deletes | implemented (signed upload, confirm, ClamAV scan, signed download, file lookup and purge for other modules, abandoned-upload cleanup) |
+| Storage | file bytes only: objects, signed upload and download links, deletes | implemented (signed upload, confirm, ClamAV scan, signed download, file lookup, publish to the public bucket and purge for other modules, abandoned-upload cleanup) |
 | Audit | the append-only log of sensitive actions from every module; never purged | skeleton |
 
 Ownership rules that are easy to get wrong:
@@ -126,6 +126,8 @@ Existing examples:
   (`IAuthService` → `GetUserRolesQuery`)
 - `FourPrep.Modules.Academy.Student` — Academy checks that the caller is the student or a linked parent
   (`IStudentService` → `HasFamilyAccessQuery`)
+- `FourPrep.Modules.Content.Storage` — Content checks a cover file and publishes it to the public bucket
+  (`IStorageService` → `GetStoredFileQuery`, `PublishFileCommand`, `UnpublishFileCommand`)
 
 Never query another module's schema with SQL, and never share entities between modules.
 
@@ -182,7 +184,7 @@ What Common has today:
 | Data | `IDbConnectionFactory` (Dapper), `DateOnly` and `TimeOnly` type handlers, `LikePatterns` (escaped `ILIKE` search), `HasJsonbConversion` and `JsonTypeHandler<T>` (jsonb columns) |
 | Time | `IDateTimeProvider`, `ITimeZoneContext`, `TimeZones` |
 | Localization | `Countries`, `Currencies` (ISO 4217), `Locales`, `PhoneNumbers`, `LocalizedTexts` (text in `en`/`uz`/`ru`), `LocalizationErrors` |
-| Validation | `RuleBuilderExtensions`: `WithError`, `CountryCode`, `CurrencyCode`, `TimeZoneId`, `Locale`, `PhoneNumber`, `LocalizedText`; `ExamScores` (valid score per `Exam`) |
+| Validation | `RuleBuilderExtensions`: `WithError`, `CountryCode`, `CurrencyCode`, `TimeZoneId`, `Locale`, `PhoneNumber`, `LocalizedText` (English required once translated), `LocalizedTextInAnyLanguage`; `ExamScores` (valid score per `Exam`) |
 | Authorization | `Roles`, `Policies`, JWT + Keycloak role mapping |
 | Presentation | `IEndpoint`, `AddEndpoints`/`MapEndpoints`, `ApiResults.ToResponse`, `RateLimitPolicies` (`Email`, `PublicRead`) |
 | Shared enums | `Exam`, `DegreeLevel`, `IntakeTerm`, `SatPolicy`, `ScholarshipKind` |

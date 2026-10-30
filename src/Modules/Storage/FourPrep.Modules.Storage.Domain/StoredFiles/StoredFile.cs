@@ -14,6 +14,7 @@ public sealed class StoredFile
 
     private const string UploadKeyPrefix = "uploads/";
     private const string ObjectKeyPrefix = "docs/";
+    private const string PublicKeyPrefix = "public/";
 
     public Guid Id { get; set; }
     public string UploadKey { get; set; } = string.Empty;
@@ -30,6 +31,8 @@ public sealed class StoredFile
     public DateTimeOffset CreatedOnUtc { get; set; }
     public DateTimeOffset? UploadedOnUtc { get; set; }
     public DateTimeOffset? DeletedOnUtc { get; set; }
+    public string? PublicKey { get; set; }
+    public DateTimeOffset? PublishedOnUtc { get; set; }
 
     public bool IsAwaitingScan => Status == StoredFileStatus.Uploaded && ScanStatus == ScanStatus.Pending;
 
@@ -120,6 +123,38 @@ public sealed class StoredFile
         }
     }
 
+    public Result Publish(DateTime utcNow)
+    {
+        if (Status != StoredFileStatus.Uploaded)
+        {
+            return Result.Failure(StoredFileErrors.NotFound);
+        }
+
+        switch (ScanStatus)
+        {
+            case ScanStatus.Failed:
+                return Result.Failure(StoredFileErrors.ScanFailed);
+            case not ScanStatus.Clean:
+                return Result.Failure(StoredFileErrors.NotScanned);
+        }
+
+        if (PublicKey is not null)
+        {
+            return Result.Success();
+        }
+
+        PublicKey = $"{PublicKeyPrefix}{Guid.NewGuid():N}";
+        PublishedOnUtc = utcNow;
+
+        return Result.Success();
+    }
+
+    public void Unpublish()
+    {
+        PublicKey = null;
+        PublishedOnUtc = null;
+    }
+
     public void Delete(DateTime utcNow)
     {
         if (Status == StoredFileStatus.Deleted)
@@ -129,5 +164,6 @@ public sealed class StoredFile
 
         Status = StoredFileStatus.Deleted;
         DeletedOnUtc = utcNow;
+        Unpublish();
     }
 }

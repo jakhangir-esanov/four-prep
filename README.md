@@ -26,7 +26,7 @@ Kerak bo'ladi: .NET 10 SDK, Docker va `localhost:5432` da ishlab turgan PostgreS
    dotnet run --project src/API/FourPrep.Api --launch-profile http
    ```
 
-   Swagger: http://localhost:5179/swagger. Migratsiyalar ishga tushishda avtomatik qo'llanadi.
+   Swagger: http://localhost:5198/swagger. Migratsiyalar ishga tushishda avtomatik qo'llanadi.
 
 ## Faqat lokal muhit uchun ma'lumotlar
 
@@ -36,7 +36,7 @@ Kerak bo'ladi: .NET 10 SDK, Docker va `localhost:5432` da ishlab turgan PostgreS
 | `super_admin` foydalanuvchi | `superadmin` / `superadmin` |
 | `fourprep-api` client secret | `fourprep-dev-secret` |
 | Mailpit (yuborilgan xatlar) | http://localhost:8025 |
-| Fayl ombori (SeaweedFS S3) | http://localhost:8333, `fourprep-dev` / `fourprep-dev-storage-secret`, bucket `fourprep-documents` |
+| Fayl ombori (SeaweedFS S3) | http://localhost:8333, `fourprep-dev` / `fourprep-dev-storage-secret`, yopiq bucket `fourprep-documents`, ochiq bucket `fourprep-public` |
 | Virus tekshiruvi (ClamAV) | `localhost:3310` |
 
 Bu qiymatlarni prod'da ishlatmang.
@@ -50,7 +50,7 @@ Har bir modul o'z PostgreSQL sxemasiga ega va boshqa modulga faqat adapter orqal
 | Auth | Keycloak hisoblari, login, sessiyalar, o'z hisobi, xodimlar hisoblari | tayyor |
 | Student | o'quvchi profili, ota-ona bog'lanishi, mentor; keyinroq o'quvchining bosqichi (stage) va yo'li, test ballari, shaxsiy hujjatlari va offboarding | profil, ota-ona va mentor tayyor |
 | Catalogue | universitetlar, dasturlar, qabul talablari, narxlar, muddatlar, grantlar, yo'nalish davlatlari | tayyor: qo'lda kiritish, CSV import, ochiq qidiruv |
-| Content | yangiliklar, natijalar (results), hamkorlar, About, xodimlarning ochiq profillari | skeleton |
+| Content | yangiliklar, natijalar (results), hamkorlar, About, xodimlarning ochiq profillari | yangiliklar tayyor: muqova rasmi, e'lon qilish, ochiq o'qish |
 | Academy | kurslar, guruhlar, yozilish, davomat, mock ballar, placement test | kurslar, guruhlar, yozilish va navbat tayyor (to'lovsiz) |
 | Admission | academy arizasi, universitetlarga arizalar, portal akkauntlari, essay, tavsiyanomalar, universitet offerlari, viza | skeleton |
 | Agreement | mahsulotlar, offer va chegirmalar, shartnomalar, imzolar | skeleton |
@@ -210,6 +210,42 @@ O'quvchi o'zini, ota-ona esa hisobiga bog'langan farzandini `Open` guruhga yozad
 - **Guruh bekor qilinsa,** undagi barcha joriy yozilishlar (navbat, to'lov kutilayotgan va faol) `Dropped` bo'ladi (`dropReason: 4` — guruh bekor qilindi). To'lagan oilani admin boshqa guruhga qo'lda o'tkazadi, pul qaytarilmaydi.
 - **Hali yo'q:** `Completed` (4) holati kurs tugashi bilan birga qo'shiladi. O'quvchi hisobi o'chirilganda uning yozilishlari Academy'da qoladi; event mexanizmi bilan tozalanadi. Spec'dagi to'lov sahifasi ochiq turgan 30 daqiqalik band Payment bilan keladi. Admin ro'yxatida o'quvchi ismi yo'q, faqat `studentUserId`: ismni frontend Student'dan (`GET /students`) oladi.
 
+## Yangiliklar (Content)
+
+Content sayt uchun yangiliklarni saqlaydi. Natijalar (results), hamkorlar, About va xodimlarning ochiq profillari keyingi bosqichda shu modulga qo'shiladi. Yangilikni `content_admin` (va `super_admin`) staff panelda yozadi va e'lon qiladi. Mehmon esa ularni login qilmasdan o'qiydi.
+
+**Tuzilishi.**
+
+| Aggregate | Nima |
+|---|---|
+| `NewsPost` | yangilik: manzil nomi (`slug`), bir yoki bir nechta tildagi sarlavha va matn, teg, muqova rasmi, holati (`Draft` yoki `Published`) |
+
+**Endpoint'lar.**
+
+- Ochiq, login talab qilmaydi, `RateLimitPolicies.PublicRead`:
+  - `GET /news?locale=&tag=&first=&rows=&sortField=&sortOrder=` — faqat e'lon qilingan yangiliklar, kartochka uchun matnsiz. Sahifada ko'pi bilan 100 ta (standart 20), standart saralash `published_on_utc` bo'yicha, eng yangisi birinchi. `locale` berilsa, faqat shu tilda sarlavhasi bor yangiliklar keladi.
+  - `GET /news/{slug}` — bitta e'lon qilingan yangilik, matni bilan. Qoralama `404` qaytaradi.
+- `content_admin` va `super_admin` (`Policies.ContentAdmin`):
+  - `GET /admin/news?status=&tag=&locale=&search=` — barcha yangiliklar (qoralamalar ham), standart saralash `updated_on_utc` bo'yicha. `search` manzil nomidan va har qaysi tildagi sarlavhadan qidiradi.
+  - `GET /admin/news/{id}` — bitta yangilik, `coverFileId` bilan.
+  - `POST /admin/news` `{ "slug", "title", "body", "tag" }`, `PUT` / `DELETE /admin/news/{id}`.
+  - `POST /admin/news/{id}/publish`, `POST /admin/news/{id}/unpublish`.
+  - `PUT /admin/news/{id}/cover` `{ "fileId" }`, `DELETE /admin/news/{id}/cover`.
+
+**Qoidalar va qarorlar.**
+
+- **Tillar.** Sarlavha kamida bitta tilda bo'lishi kerak (`NewsPost.TitleRequired`), inglizchasi shart emas: faqat o'zbekcha yoki faqat ruscha yangilik ham bo'ladi. Sarlavha va matn bir xil tillarda yoziladi (`NewsPost.TextLanguagesMismatch`): sarlavhasi bor tilda matn ham bo'lishi kerak, matni bor tilda esa sarlavha. Shuning uchun Catalogue va Academy'dagi "inglizchasi majburiy" qoidasi (`LocalizedText`) bu yerda ishlatilmaydi, uning o'rniga Common'dagi `LocalizedTextInAnyLanguage` bor. Frontend ro'yxatni foydalanuvchi tilida so'raydi (`?locale=uz`) yoki hammasini olib, boshqa tildagi yangilikni belgi bilan ko'rsatadi.
+- **Matn Markdown'da.** `body` ning har bir tili Markdown (sarlavha, ro'yxat, havola, qalin matn), har biri 20 000 belgigacha. HTML saqlanmaydi. Frontend Markdown'ni xom HTML'siz render qiladi, shunda yangilik orqali sahifaga skript tushmaydi.
+- **Manzil nomi va teg.** `slug` kichik lotin harflari, raqamlar va chiziqchadan iborat, 150 belgigacha va unique (`NewsPost.SlugTaken`). Uni e'lon qilingandan keyin ham o'zgartirish mumkin, lekin eski havola ishlamay qoladi. Teg ixtiyoriy va xuddi shu ko'rinishdagi kalit (`admissions`, `courses`). Uning uch tildagi nomini frontend o'zi chiqaradi, bazada matn sifatida saqlanmaydi.
+- **Holat.** Yangi yangilik `Draft` bo'ladi, mehmonga faqat `Published` ko'rinadi. `publishedOnUtc` birinchi e'londa qo'yiladi va qayta e'lon qilinganda o'zgarmaydi: xatoni tuzatish uchun olib qo'yilib, qayta chiqarilgan yangilik ro'yxat boshiga sakramaydi. E'lon qilingan yangilikni tahrirlash mumkin, u e'londa qoladi. Ikki marta e'lon qilish `409 NewsPost.AlreadyPublished`, qoralamani olib qo'yish `409 NewsPost.NotPublished` qaytaradi. Yangilikni istalgan holatda o'chirish mumkin.
+- **Muqova rasmi.** Admin rasmni odatdagi yo'l bilan yuklaydi (`POST /files/upload-url` → `PUT` → `POST /files/{fileId}/complete`, pastda "Fayllar (Storage)"), keyin `PUT /admin/news/{id}/cover` bilan biriktiradi. Content fayl haqida Storage'dan `FourPrep.Modules.Content.Storage` adapteri orqali so'raydi.
+  - Faqat o'zi yuklagan fayl biriktiriladi, boshqasiniki `404 NewsPost.CoverNotFound` qaytaradi. Aks holda id'ni bilgan admin o'quvchining pasportini ochiq qilib qo'yishi mumkin edi.
+  - Faqat JPG va PNG (`NewsPost.CoverNotAnImage`), chunki brauzerlar HEIC'ni ko'rsatmaydi. Bitta rasm faqat bitta yangilikning muqovasi bo'ladi (`NewsPost.CoverInUse`).
+  - Virus tekshiruvi tugamagan bo'lsa, Storage'ning `409 StoredFile.NotScanned` xatosi qaytadi va frontend bir necha soniyadan keyin qayta yuboradi.
+  - Biriktirilganda Storage faylni ochiq bucket'ga nusxalaydi va yangilik uning doimiy URL'ini (`coverUrl`) saqlaydi. Muqova almashtirilsa, olib tashlansa yoki yangilik o'chirilsa, ochiq nusxa yangilik saqlanishidan oldin o'chiriladi: ombor xato bersa, hech narsa saqlanmaydi va admin qayta urinadi, rasm esa ochiq qolib ketmaydi. Asl fayl yopiq bucket'da qoladi.
+- **Qoralama muqovasi.** Rasm biriktirilishi bilan ochiq bucket'ga chiqadi, yangilik e'lon qilinishini kutmaydi: admin qoralamani rasmi bilan ko'ra olishi uchun. URL tasodifiy (`public/<uuid>`), bucket ro'yxatini esa imzosiz olib bo'lmaydi, shuning uchun uni topib bo'lmaydi.
+- **Javoblar.** Ochiq javobda `coverFileId` yo'q, faqat `coverUrl` bor. Muallif hozircha saqlanmaydi: kim nima qilganini Audit moduli yozadi.
+
 ## Fayllar (Storage)
 
 Storage faqat fayl baytlarini saqlaydi. Fayl nima ekanini (pasport, transkript, rasm) bilmaydi, buni faylni ishlatadigan modul biladi. Baytlar API orqali o'tmaydi: brauzer faylni imzolangan havola bilan to'g'ridan-to'g'ri S3 omboriga yuklaydi va yuklab oladi. Prod'da bu alohida pullik S3-mos ombor bo'ladi: Cloudflare R2 yoki Hetzner Object Storage, buyurtmachi hali tanlamagan. Lokalda SeaweedFS ishlatiladi (pastda). Bu yo'l spec'dagi talab bo'yicha tanlandi. Muqobili fayllarni API orqali qabul qilib, serverning o'z diskida saqlash edi: alohida ombor kerak bo'lmasdi, lekin hamma fayl serverdan o'tardi, disk, zaxira nusxa va ikkinchi server masalasi bizga qolardi.
@@ -232,13 +268,16 @@ Storage faqat fayl baytlarini saqlaydi. Fayl nima ekanini (pasport, transkript, 
 - **Boshqa modullar uchun API** (endpoint'siz, faqat `ISender` va adapter orqali):
   - `GetStoredFileQuery(fileId)` — fayl ma'lumoti: kim yuklagan, holati, tekshiruv holati, `sha256`, `isReady` (yuklangan va toza). Modul o'quvchi hujjatga faqat o'zi yuklagan va tayyor faylni biriktirayotganini shu bilan tekshiradi.
   - `GetDownloadUrlQuery(fileId)` — egasini tekshirmaydigan 5 daqiqalik havola. Ruxsatni chaqiruvchi modul tekshirgan bo'lishi kerak.
-  - `DeleteFileCommand(fileId)` — faylni ombordan o'chiradi, yozuv `Deleted` va o'chirilgan sana bilan qoladi (offboarding purge). Qayta chaqirish zararsiz.
+  - `DeleteFileCommand(fileId)` — faylni ombordan (ochiq nusxasi bo'lsa, uni ham) o'chiradi, yozuv `Deleted` va o'chirilgan sana bilan qoladi (offboarding purge). Qayta chaqirish zararsiz.
+  - `PublishFileCommand(fileId)` — toza faylni ochiq bucket'ga `public/<uuid>` kaliti bilan nusxalaydi va doimiy URL'ini (`Storage:S3:PublicBaseUrl` + kalit) qaytaradi. Nusxada `Cache-Control: public, max-age=86400` bor: CDN va brauzer rasmni bir kun keshlaydi. Muddat ataylab qisqa: olib tashlangan muqova (masalan noo'rin rasm) brauzer keshidan ko'pi bilan bir kunda yo'qoladi, CDN'da esa darhol tozalash uchun purge qilinadi. Tekshiruv tugamagan fayl `409 StoredFile.NotScanned`, tekshirib bo'lmagani `409 StoredFile.ScanFailed` qaytaradi. Allaqachon ochiq faylga o'sha URL qaytadi, qayta nusxalanmaydi. Fayl nima ekanini va uni kim ochishi mumkinligini chaqiruvchi modul tekshiradi (Content faqat admin o'zi yuklagan JPG/PNG'ni ochadi).
+  - `UnpublishFileCommand(fileId)` — ochiq nusxani o'chiradi, asl fayl qoladi. Ochiq bo'lmagan fayl uchun zararsiz.
 - **Kalitlar tasodifiy.** Ombordagi kalit `docs/<uuid>`: unda fayl nomi yoki o'quvchi ismi yo'q. Asl nom faqat bazada saqlanadi. Bucket yopiq, imzosiz so'rov rad etiladi.
 - **Tashlab ketilgan yuklashlar.** Bir soat ichida tasdiqlanmagan yuklashning ikkala kaliti ham ombordan o'chiriladi va u `Deleted` bo'ladi (Hangfire, har soatda `storage-remove-abandoned-uploads`, bir ishga tushishda 500 tagacha).
 - **Virus tekshiruvi.** ClamAV'ning `clamd` xizmati bilan INSTREAM protokoli orqali gaplashiladi (`Storage:ClamAv`: `Host`, `Port`, `TimeoutSeconds`). Fayl S3'dan o'qiladi (20 MB gacha, xotirada), tekshiriladi va o'sha baytlardan `sha256` hisoblanadi. Har bir fayl alohida tekshiriladi: bitta fayl xato bersa (ClamAV ishlamay qoldi, javob bermadi, ombordagi obyekt yo'q), boshqalari tekshirilaveradi, u fayl esa keyingi urinishda navbatning oxiriga o'tadi. Uch marta tekshirib bo'lmagan fayl `scanStatus: 4` (Failed) bo'ladi va yuklab olishda `409 StoredFile.ScanFailed` qaytadi: o'quvchi faylni qaytadan yuklaydi. `clamav/clamd.conf` da `AlertExceedsMax yes`: fayl ClamAV chegaralaridan oshsa, u toza deb o'tkazib yuborilmaydi, zararli deb hisoblanadi. Fayl baytlari clamd'ga shifrlanmagan TCP orqali boradi, clamd esa parol so'ramaydi, shuning uchun prod'da u faqat API bilan bir yopiq tarmoqda (yoki localhost'da) turishi kerak. Yuklab olish shu tekshiruvlar tugaguncha yopiq. Lokalda `docker compose` dagi `clamav` birinchi ishga tushishda virus bazasini yuklab oladi, bu bir necha daqiqa oladi.
-- **Hali yo'q:** zararli fayl haqida o'quvchiga xabar (Notification bilan), ommaviy bucket (yangilik rasmlari, logolar, ularni ishlatadigan modul bilan), HEIC'ni JPG'ga o'girish va kichik rasm, xodim yuklab olishini audit'ga yozish (Audit bilan).
-- **S3 sozlamalari** `Storage:S3` bo'limida: `ServiceUrl`, `Region`, `AccessKey`, `SecretKey`, `DocumentsBucket`, `ForcePathStyle`. Birinchi beshtasi bo'sh bo'lsa, API ishga tushmaydi. Prod kaliti faqat shu bitta bucket'ga yozish va o'qish huquqiga ega bo'lishi, bucket CORS'i esa faqat haqiqiy frontend manzilini ruxsat qilishi kerak. SDK'ning yangi standart checksum'lari o'chirilgan (`WHEN_REQUIRED`), chunki S3-mos omborlar ularni har doim ham qo'llamaydi.
-- **Lokal ombor SeaweedFS.** MinIO endi tayyor community image chiqarmaydi, shuning uchun lokalda SeaweedFS'ning S3 gateway'i ishlaydi (`docker compose` dagi `seaweedfs`; `seaweedfs-buckets` bir martalik konteyner `fourprep-documents` bucket'ini yaratadi). Kod faqat S3 API'ni biladi, shuning uchun prod'da R2 ham, Hetzner ham faqat `Storage:S3` sozlamalari bilan ishlaydi. Brauzer `http://localhost:4200` dan yuklashi uchun CORS yoqilgan. Port faqat `127.0.0.1` da ochiq, chunki lokal kalit hammaga ma'lum.
+- **Hali yo'q:** zararli fayl haqida o'quvchiga xabar (Notification bilan), HEIC'ni JPG'ga o'girish va kichik rasm (thumbnail), xodim yuklab olishini audit'ga yozish (Audit bilan).
+- **S3 sozlamalari** `Storage:S3` bo'limida: `ServiceUrl`, `Region`, `AccessKey`, `SecretKey`, `DocumentsBucket`, `PublicBucket`, `PublicBaseUrl`, `ForcePathStyle`. `ForcePathStyle` dan boshqa biri bo'sh bo'lsa, API ishga tushmaydi. Prod kaliti faqat shu ikki bucket'ga yozish va o'qish huquqiga ega bo'lishi, hujjatlar bucket'ining CORS'i esa faqat haqiqiy frontend manzilini ruxsat qilishi kerak.
+- **Ochiq bucket.** `PublicBucket` dagi obyektlarni imzosiz o'qish mumkin, bucket ro'yxatini esa olib bo'lmaydi. Unga faqat `PublishFileCommand` yozadi. `PublicBucket` `DocumentsBucket` bilan bir xil bo'lsa yoki `PublicBaseUrl` hujjatlar bucket'iga ishora qilsa, API ishga tushmaydi: aks holda sozlamadagi bitta xato pasport va transkriptlarni ochiq qilib qo'yardi. Ochiq nusxaga `X-Content-Type-Options: nosniff` sarlavhasini prod'da CDN qo'yadi (R2'da transform rule), chunki S3 obyekt metama'lumoti uni saqlay olmaydi. Prod'da R2 bucket'iga o'z domeni ulanadi, Hetzner'da esa bucket policy faqat `GetObject` ni ochiq qiladi. `PublicBaseUrl` shu manzil bo'ladi. U o'zgarsa, yangiliklardagi `coverUrl` migratsiya bilan yangilanadi, chunki URL to'liq saqlanadi. SDK'ning yangi standart checksum'lari o'chirilgan (`WHEN_REQUIRED`), chunki S3-mos omborlar ularni har doim ham qo'llamaydi.
+- **Lokal ombor SeaweedFS.** MinIO endi tayyor community image chiqarmaydi, shuning uchun lokalda SeaweedFS'ning S3 gateway'i ishlaydi (`docker compose` dagi `seaweedfs`; `seaweedfs-buckets` bir martalik konteyner `fourprep-documents` va `fourprep-public` bucket'larini yaratadi, `seaweedfs/s3.json` dagi `anonymous` identity esa faqat `fourprep-public` dan imzosiz o'qishga ruxsat beradi). Kod faqat S3 API'ni biladi, shuning uchun prod'da R2 ham, Hetzner ham faqat `Storage:S3` sozlamalari bilan ishlaydi. Brauzer `http://localhost:4200` dan yuklashi uchun CORS yoqilgan. Port faqat `127.0.0.1` da ochiq, chunki lokal kalit hammaga ma'lum.
 
 ## Butun dunyodan foydalanuvchilar
 

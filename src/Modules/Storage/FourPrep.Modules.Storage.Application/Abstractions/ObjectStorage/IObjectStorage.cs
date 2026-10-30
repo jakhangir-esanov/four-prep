@@ -15,4 +15,10 @@ public interface IObjectStorage
     Task MoveAsync(string sourceKey, string targetKey, CancellationToken cancellationToken = default);
 
     Task DeleteAsync(string objectKey, CancellationToken cancellationToken = default);
+
+    Task CopyToPublicAsync(string objectKey, string publicKey, string contentType, CancellationToken cancellationToken = default);
+
+    Task DeletePublicAsync(string publicKey, CancellationToken cancellationToken = default);
+
+    string GetPublicUrl(string publicKey);
 }
