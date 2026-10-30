@@ -55,7 +55,7 @@ Har bir modul o'z PostgreSQL sxemasiga ega va boshqa modulga faqat adapter orqal
 | Admission | academy arizasi, universitetlarga arizalar, portal akkauntlari, essay, tavsiyanomalar, universitet offerlari, viza | skeleton |
 | Agreement | mahsulotlar, offer va chegirmalar, shartnomalar, imzolar | skeleton |
 | Payment | invoice, to'lovlar, to'lov tizimining webhook'i | skeleton |
-| Meeting | konsultatsiyalar, xodimlarning bo'sh vaqtlari, video xonalar, mock interview | skeleton |
+| Meeting | konsultatsiyalar, xodimlarning bo'sh vaqtlari, uchrashuv havolalari (Zoom/Meet), mock interview | konsultatsiya tayyor: xodim jadvali, bo'sh vaqtlar, bron, bekor qilish, qatnashuv |
 | AI | AI Counselor, plan wizard va My Plan, haftalik check-in | skeleton |
 | Chat | suhbatlar va xabarlar | skeleton |
 | Notification | ilova ichidagi, email va Telegram bildirishnomalari | skeleton |
@@ -66,7 +66,7 @@ Nega shunday bo'lindi:
 
 - **Catalogue Content'dan alohida.** AI universitetlar haqida faqat katalogdagi faktlarga tayanadi, har bir faktning manbasi (`source_url`) va tekshirilgan sanasi bor, eskirsa ogohlantiriladi. Yangilik va natijalarda bunday qoidalar yo'q. Ikkalasini `content_admin` boshqaradi, lekin ma'lumot va qoidalar har xil, AI esa faqat katalogga adapter orqali murojaat qiladi. Bitta Content moduli ham ko'rib chiqildi: unda AI yangiliklar bilan bir modulga bog'lanib qolardi.
 - **Hujjatlar Student'da.** Pasport, transkript, sertifikat o'quvchining yozuvi: turi, holati (yuklangan, tasdiqlangan, rad etilgan), kim tekshirgani va qachon o'chirilishi Student'da saqlanadi. Storage faqat baytlarni saqlaydi va fayl nima ekanini bilmaydi, Student hujjati Storage'dagi fayl id'siga ishora qiladi. Offboarding'da hujjatlarni o'chirishni ham Student boshqaradi: yozuv qoladi, fayl o'chadi. Hujjatlarni Storage'ga yoki alohida modulga berish ko'rib chiqildi: Storage texnik ombor bo'lib qolishi kerak, alohida modul esa offboarding'ni ikki modulga bo'lib yuborardi.
-- **Meeting alohida.** Konsultatsiyani Admission, mock interview'ni Admission va Academy, darslarni Academy ishlatadi. Uchrashuv, xodimning bo'sh vaqti va video xona bitta joyda turadi, qolgan modullar faqat uchrashuv id'sini saqlaydi.
+- **Meeting alohida.** Konsultatsiyani Admission, mock interview'ni Admission va Academy, darslarni Academy ishlatadi. Uchrashuv, xodimning bo'sh vaqti va uchrashuv havolasi (Zoom yoki Google Meet, video platformada emas) bitta joyda turadi, qolgan modullar faqat uchrashuv id'sini saqlaydi.
 - **Audit alohida.** Jurnal hech qachon o'chirilmaydi va boshqa modullarning offboarding'i unga tegmaydi. Modullar unga qanday yozishi (event yoki adapter) Audit qurilayotganda hal qilinadi.
 
 Foydalanuvchi paneli mehmon uchun ham ishlaydi: katalog, kurslar, yangiliklar kabi umumiy ma'lumotni o'qiydigan endpoint'lar login talab qilmaydi. Shaxsiy ma'lumot va o'zgartirish uchun esa login kerak.
@@ -246,6 +246,47 @@ Content sayt uchun yangiliklarni saqlaydi. Natijalar (results), hamkorlar, About
   - Rasm ochiq qilingandan keyin yangilikni saqlab bo'lmasa (baza ishlamay qoldi yoki boshqa so'rov shu rasmni oldinroq oldi), yangi rasm ochiq bucket'dan qaytarib olinadi, agar uni boshqa yangilik ishlatmayotgan bo'lsa. Buni tekshirib bo'lmasa (baza javob bermasa), rasm baribir olinadi: begona yangilikning rasmi bir muddat ochilmay qolishi, rasm ochiq qolib ketishidan yaxshiroq. Qaytarib olish o'zi ham muvaffaqiyatsiz bo'lsa, bu log'ga yoziladi va so'rov asl xato bilan tugaydi. Eski muqova esa saqlashdan oldin o'chirilgan bo'ladi: yangilik eski `coverUrl` bilan qoladi, rasm ochilmaydi va admin muqovani qayta qo'yadi. Noo'rin rasmni almashtirganda u ochiq qolib ketmasligi uchun tartib shunday tanlangan.
 - **Qoralama muqovasi.** Rasm biriktirilishi bilan ochiq bucket'ga chiqadi, yangilik e'lon qilinishini kutmaydi: admin qoralamani rasmi bilan ko'ra olishi uchun. URL tasodifiy (`public/<uuid>`), bucket ro'yxatini esa imzosiz olib bo'lmaydi, shuning uchun uni topib bo'lmaydi.
 - **Javoblar.** Ochiq javobda `coverFileId` yo'q, faqat `coverUrl` bor. Muallif hozircha saqlanmaydi: kim nima qilganini Audit moduli yozadi.
+
+## Uchrashuvlar (Meeting)
+
+Meeting bepul 45 daqiqalik konsultatsiyani (o'quvchi yo'lining 1-bosqichi) bron qilishni boshqaradi. Uchrashuvning o'zi platformada emas, Zoom yoki Google Meet'da o'tadi: spec'dagi LiveKit video xonasi o'rniga har bir xodimning o'z doimiy havolasi ishlatiladi. Hozircha faqat konsultatsiya bor. Mentor sessiyasi, mock interview va ota-ona uchrashuvi keyin shu tuzilmaga qo'shiladi.
+
+**Tuzilishi.**
+
+| Aggregate | Ichidagilar | Nima |
+|---|---|---|
+| `StaffSchedule` | `AvailabilityWindow` | xodimning uchrashuv jadvali: ko'rinadigan ismi, vaqt zonasi, doimiy Zoom/Meet havolasi, ofis manzili va haftalik bo'sh vaqtlari (kun, boshlanish, tugash, format) |
+| `Meeting` | — | bitta uchrashuv: turi, formati (`1` online, `2` ofis, `3` telefon), holati (`1` rejada, `2` bekor, `3` o'tkazildi, `4` kelmadi), o'quvchi, xodim, vaqti, havola yoki manzil |
+
+**Endpoint'lar.**
+
+- O'quvchi va ota-ona (`Policies.StudentOrParent`):
+  - `GET /meetings/slots?studentUserId=&mode=&fromUtc=&toUtc=` — bo'sh vaqtlar: `{ staffUserId, staffName, startsOnUtc, durationMinutes, modes }`. Standart davr — 12 soatdan keyingi 14 kun, ko'pi bilan 31 kun.
+  - `POST /meetings` `{ "studentUserId", "staffUserId", "startsOnUtc", "mode", "phoneNumber" }` — bron qiladi, javobda uchrashuv id'si. Telefon formatida `phoneNumber` (E.164) majburiy.
+  - `GET /meetings?studentUserId=` — o'quvchining hamma uchrashuvlari.
+  - `DELETE /meetings/{id}` — uchrashuv boshlanguncha bekor qiladi.
+- Xodim (`Policies.Mentor`: `mentor`, `mentor_admin`, `super_admin`):
+  - `GET /meetings/schedules/me`, `PUT /meetings/schedules/me` `{ "displayName", "timeZone", "meetingUrl", "officeCountryCode", "officeCity", "officeAddress", "windows": [{ "day", "startTime", "endTime", "mode" }] }`.
+  - `GET /meetings/staff/me?status=&mode=&fromUtc=&toUtc=&search=` — xodimning o'z uchrashuvlari, standart saralash `starts_on_utc` bo'yicha.
+  - `POST /meetings/{id}/cancel` `{ "reason" }`, `PUT /meetings/{id}/attendance` `{ "status": 3 | 4 }`, `PUT /meetings/{id}/notes` `{ "notes" }`, `PUT /meetings/{id}/link` `{ "meetingUrl" }` — faqat o'z uchrashuvi uchun. Begonasi `404`.
+- `mentor_admin` va `super_admin` (`Policies.MentorAdmin`):
+  - `GET /admin/meetings?status=&mode=&staffUserId=&studentUserId=&fromUtc=&toUtc=&search=`.
+  - `POST /admin/meetings/{id}/cancel` `{ "reason" }` — istalgan uchrashuvni bekor qiladi.
+
+**Qoidalar va qarorlar.**
+
+- **Havola tashqarida.** Xodim jadvalida bitta doimiy havola saqlaydi (Zoom Personal Meeting Room yoki doimiy Google Meet). Online bron shu havolani o'zi bilan oladi. Xodim kerak bo'lsa uni bitta uchrashuv uchun almashtiradi (`PUT /meetings/{id}/link`). Havola faqat `https://` va faqat Zoom (`zoom.us` va uning subdomenlari) yoki Google Meet (`meet.google.com`) bo'ladi. Login-parol qismi (`https://zoom.us@...`), boshqa port, IP yoki boshqa domen rad etiladi (`StaffSchedule.InvalidMeetingUrl`). Bu havolani bolalar va ota-onalar bosadi, shuning uchun buzilgan xodim hisobi uni fishing sahifasiga almashtira olmasligi kerak. Teams yoki boshqa xizmat kerak bo'lsa, domen `MeetingLinks` ga qo'shiladi. Zoom yoki Google API bilan integratsiya yo'q: 4Prep'ning Zoom yoki Google akkaunti, OAuth va har uchrashuvga alohida xona kerak bo'lsa, `MeetingUrl` ni bron paytida API yaratadigan qilib qo'shiladi.
+- **Kim bilan.** O'quvchiga mentor biriktirilgan bo'lsa, faqat o'sha mentorning vaqtlari ko'rinadi va boshqa xodim bilan bron `409 Meeting.MentorOnly` qaytaradi. Mentor bo'lmasa, jadvali bor istalgan xodimning vaqtlari ko'rinadi. Jadval tuzgan xodim konsultant hisoblanadi, alohida rol yo'q. Bron paytida xodim hali `mentor`, `mentor_admin` yoki `super_admin` ekani `FourPrep.Modules.Meeting.Auth` adapteri orqali tekshiriladi: roli olib tashlangan xodimga o'quvchi ma'lumoti bormaydi (`Meeting.SlotNotAvailable`). Bo'sh vaqtlar ro'yxati rolni tekshirmaydi (har bir xodim uchun Keycloak'ka so'rov bo'lardi), shuning uchun bunday xodimning jadvali event mexanizmi qo'shilguncha ro'yxatda ko'rinib turishi mumkin. Mentorni Student `FourPrep.Modules.Meeting.Student` adapteri orqali (`GetStudentContactQuery`) aytadi, oila ruxsatini esa `HasFamilyAccessQuery` tekshiradi.
+- **Vaqt zonasi.** So'rovdagi vaqtlar (`startsOnUtc`, `fromUtc`, `toUtc`) offset bilan kelsa shu onga o'giriladi, offset'siz kelsa UTC deb o'qiladi. Bo'sh vaqtlar xodimning o'z IANA zonasida yoziladi (`America/New_York`, `Asia/Tashkent`), uchrashuv esa UTC'da saqlanadi. Frontend vaqtni foydalanuvchi zonasida ko'rsatadi. Yozgi vaqtga o'tilganda slotlar xodim shahrida siljimaydi. Mavjud bo'lmagan mahalliy vaqt (soat oldinga surilgan tun) tashlab ketiladi.
+- **Slotlar.** Har bir bo'sh vaqt ichida 30 daqiqalik qadam bilan boshlanadi va 45 daqiqalik uchrashuv oyna ichiga sig'ishi kerak (09:00–11:00 → 09:00, 09:30, 10:00). Xodimning rejadagi uchrashuvi bilan ustma-ust tushadigan slot ko'rsatilmaydi. Bir vaqtda bir nechta format ochiq bo'lsa, slot ularni `modes` da birga beradi. Bir kunda bir xil formatdagi oynalar ustma-ust tushmaydi (`AvailabilityWindow.Overlapping`), har xil formatdagilari tushishi mumkin.
+- **Bron qoidalari.** Kamida 12 soat oldin va ko'pi bilan 30 kun oldinga. Vaqt jadvalda aynan shu format bilan taklif qilinishi kerak, aks holda `409 Meeting.SlotNotAvailable`. Bitta o'quvchida bir vaqtda bitta rejadagi konsultatsiya bo'ladi (`Meeting.AlreadyBooked`). Bitta foydalanuvchi (ota-ona bir nechta farzandi uchun) bir vaqtda ko'pi bilan 3 ta rejadagi konsultatsiya bron qiladi (`Meeting.TooManyBooked`). Bekor qilingandan keyin qayta bron qilish mumkin.
+- **Suiiste'moldan himoya.** Ro'yxatdan o'tish ochiq, shuning uchun bir kishi ko'p hisob ochib mentorlarning vaqtini band qilib qo'yishi mumkin. `POST /meetings` va `DELETE /meetings/{id}` ga bitta IP'dan soatiga 20 ta so'rov ruxsat etiladi (`RateLimitPolicies.Booking`, oshsa `429`), `GET /meetings/slots` ga esa `PublicRead` (daqiqasiga 120). Tasdiqlangan email talab qilish (`Policies.VerifiedEmail`) hali yoqilmagan.
+- **Bir vaqtdagi bronlar.** Xodim jadvali qatorida `xmin` versiyasi bor va har bir bron uni yangilaydi. Bir xodimga ikki kishi bir vaqtda bron qilsa, ikkinchisi `409 Conflict.DuplicateKey` oladi va bo'sh vaqtlarni qayta so'raydi. Bazada ham bir xodim va bir boshlanish vaqtiga, bir o'quvchi va bitta konsultatsiyaga rejadagi uchrashuv uchun qisman unique indeks bor.
+- **Nusxa qoladi.** Uchrashuv bron paytidagi xodim ismi, havola va ofis manzilini o'zida saqlaydi. Xodim jadvalini keyin o'zgartirsa, oldin bron qilingan uchrashuvlar o'zgarmaydi.
+- **Bekor qilish.** Oila uchrashuvni boshlanguncha bekor qiladi (`Meeting.AlreadyStarted`). Xodim o'z uchrashuvini sabab bilan bekor qiladi, `mentor_admin` esa istalganini, boshlangandan keyin ham (masalan, o'tkazilmay qolgan uchrashuvni yopish uchun). Sabab oilaga ko'rinadi, shuning uchun u oilaga yozilgan matn bo'lishi kerak. Uchrashuvlar o'chirilmaydi, `Cancelled` bo'lib qoladi.
+- **Qatnashuv.** Uchrashuv boshlangandan keyin xodim uni `Held` (3) yoki `NoShow` (4) deb belgilaydi va keyin tuzatishi mumkin. Xodimning izohi (`staffNotes`) faqat xodimlarga ko'rinadi.
+- **Kim nimani ko'radi.** Oila javobida xodimning id'si, izohi va kim bron qilgani yo'q, faqat `bookedByMe`. Havola faqat rejadagi uchrashuvda ko'rsatiladi. Xodim uchrashuvda o'quvchining ko'rinadigan ismini (ism-familiya, bo'lmasa username) va telefon uchrashuvida telefonini ko'radi. Telefon raqami uchrashuv bekor qilinishi yoki qatnashuv belgilanishi bilan o'chiriladi. Bu ism bron paytida Meeting'ga nusxalanadi, chunki mentori bo'lmagan konsultant Student profilini o'qiy olmaydi. Oila shu xodim bilan bron qilib, ismini unga o'zi beradi; xodim profilning qolgan qismini (tug'ilgan sana, maktab, davlat) ko'rmaydi.
+- **Hali yo'q:** natija formasi (yo'nalish, davlatlar, yo'l, keyingi qadam) va o'quvchi bosqichini o'zgartirish (Student/Admission bilan), 24 va 1 soat oldingi eslatmalar (Notification bilan), boshqa uchrashuv turlari, ko'chirish (hozir bekor qilib qayta bron qilinadi). O'quvchi hisobi o'chirilganda uning uchrashuvlari va nusxalangan ismi Meeting'da qoladi. Ular event mexanizmi bilan tozalanadi.
 
 ## Fayllar (Storage)
 

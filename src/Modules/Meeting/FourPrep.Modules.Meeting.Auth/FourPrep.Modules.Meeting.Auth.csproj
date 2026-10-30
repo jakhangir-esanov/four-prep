@@ -1,0 +1,6 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="..\FourPrep.Modules.Meeting.Application\FourPrep.Modules.Meeting.Application.csproj" />
+    <ProjectReference Include="..\..\Auth\FourPrep.Modules.Auth.Application\FourPrep.Modules.Auth.Application.csproj" />
+  </ItemGroup>
+</Project>

@@ -113,9 +113,11 @@
   </Folder>
   <Folder Name="/src/Modules/Meeting/">
     <Project Path="src/Modules/Meeting/FourPrep.Modules.Meeting.Application/FourPrep.Modules.Meeting.Application.csproj" />
+    <Project Path="src/Modules/Meeting/FourPrep.Modules.Meeting.Auth/FourPrep.Modules.Meeting.Auth.csproj" />
     <Project Path="src/Modules/Meeting/FourPrep.Modules.Meeting.Domain/FourPrep.Modules.Meeting.Domain.csproj" />
     <Project Path="src/Modules/Meeting/FourPrep.Modules.Meeting.Infrastructure/FourPrep.Modules.Meeting.Infrastructure.csproj" />
     <Project Path="src/Modules/Meeting/FourPrep.Modules.Meeting.Presentation/FourPrep.Modules.Meeting.Presentation.csproj" />
+    <Project Path="src/Modules/Meeting/FourPrep.Modules.Meeting.Student/FourPrep.Modules.Meeting.Student.csproj" />
   </Folder>
   <Folder Name="/src/Modules/Meeting/test/">
     <Project Path="src/Modules/Meeting/test/FourPrep.Modules.Meeting.ArchitectureTests/FourPrep.Modules.Meeting.ArchitectureTests.csproj" />

@@ -1,11 +1,19 @@
 namespace FourPrep.Modules.Meeting.Infrastructure;
 
 using Microsoft.EntityFrameworkCore;
+using FourPrep.Modules.Meeting.Auth;
+using FourPrep.Modules.Meeting.Student;
 using Microsoft.Extensions.Configuration;
 using FourPrep.Common.Presentation.Endpoints;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.Extensions.DependencyInjection;
+using FourPrep.Modules.Meeting.Domain.Meetings;
+using FourPrep.Modules.Meeting.Domain.StaffSchedules;
+using FourPrep.Modules.Meeting.Infrastructure.Meetings;
 using FourPrep.Modules.Meeting.Infrastructure.Database;
+using FourPrep.Modules.Meeting.Infrastructure.StaffSchedules;
+using FourPrep.Modules.Meeting.Application.Abstractions.Auth;
+using FourPrep.Modules.Meeting.Application.Abstractions.Students;
 using FourPrep.Modules.Meeting.Application.Abstractions.Data;
 using FourPrep.Modules.Meeting.Infrastructure.Authentication;
 using FourPrep.Modules.Meeting.Application.Abstractions.Authentication;
@@ -34,5 +42,10 @@ public static class MeetingModule
         services.AddScoped<ICurrentUser, CurrentUser>();
 
         services.AddScoped<IUnitOfWork>(sp => sp.GetRequiredService<MeetingDbContext>());
+
+        services.AddScoped<IStaffScheduleRepository, StaffScheduleRepository>();
+        services.AddScoped<IMeetingRepository, MeetingRepository>();
+        services.AddScoped<IAuthService, AuthService>();
+        services.AddScoped<IStudentService, StudentService>();
     }
 }

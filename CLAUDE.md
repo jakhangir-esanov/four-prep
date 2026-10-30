@@ -87,7 +87,7 @@ Modules in `src/Modules/`:
 | Admission | academy application, university applications, portal accounts, essays, recommendations, university offers, visa | skeleton |
 | Agreement | products, offers and discounts, agreements, signatures | skeleton |
 | Payment | invoices, payments, the payment provider's webhook | skeleton |
-| Meeting | consultations, staff availability, video rooms, mock interviews | skeleton |
+| Meeting | consultations, staff availability, meeting links (Zoom/Meet, not hosted by us), mock interviews | implemented (staff schedules, free slots, consultation booking, cancel, attendance) |
 | AI | AI Counselor, plan wizard and My Plan, weekly check-in | skeleton |
 | Chat | threads and messages | skeleton |
 | Notification | in-app, email and Telegram notifications | skeleton |
@@ -128,6 +128,10 @@ Existing examples:
   (`IStudentService` → `HasFamilyAccessQuery`)
 - `FourPrep.Modules.Content.Storage` — Content checks a cover file and publishes it to the public bucket
   (`IStorageService` → `GetStoredFileQuery`, `PublishFileCommand`, `UnpublishFileCommand`)
+- `FourPrep.Modules.Meeting.Student` — Meeting checks family access and reads the student's name and mentor
+  (`IStudentService` → `HasFamilyAccessQuery`, `GetStudentContactQuery`)
+- `FourPrep.Modules.Meeting.Auth` — Meeting checks that a booked staff member still holds a consultant role
+  (`IAuthService` → `GetUserRolesQuery`)
 
 Never query another module's schema with SQL, and never share entities between modules.
 
@@ -186,7 +190,7 @@ What Common has today:
 | Localization | `Countries`, `Currencies` (ISO 4217), `Locales`, `PhoneNumbers`, `LocalizedTexts` (text in `en`/`uz`/`ru`), `LocalizationErrors` |
 | Validation | `RuleBuilderExtensions`: `WithError`, `CountryCode`, `CurrencyCode`, `TimeZoneId`, `Locale`, `PhoneNumber`, `LocalizedText` (English required once translated), `LocalizedTextInAnyLanguage`; `ExamScores` (valid score per `Exam`) |
 | Authorization | `Roles`, `Policies`, JWT + Keycloak role mapping |
-| Presentation | `IEndpoint`, `AddEndpoints`/`MapEndpoints`, `ApiResults.ToResponse`, `RateLimitPolicies` (`Email`, `PublicRead`) |
+| Presentation | `IEndpoint`, `AddEndpoints`/`MapEndpoints`, `ApiResults.ToResponse`, `RateLimitPolicies` (`Email`, `PublicRead`, `FileUpload`, `Booking`) |
 | Shared enums | `Exam`, `DegreeLevel`, `IntakeTerm`, `SatPolicy`, `ScholarshipKind` |
 | Exceptions | `ApplicationException` |
 

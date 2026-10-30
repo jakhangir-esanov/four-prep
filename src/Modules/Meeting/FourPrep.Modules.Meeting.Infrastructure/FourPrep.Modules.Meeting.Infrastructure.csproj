@@ -4,5 +4,7 @@
     <ProjectReference Include="..\..\..\Common\FourPrep.Common.Presentation\FourPrep.Common.Presentation.csproj" />
     <ProjectReference Include="..\FourPrep.Modules.Meeting.Application\FourPrep.Modules.Meeting.Application.csproj" />
     <ProjectReference Include="..\FourPrep.Modules.Meeting.Presentation\FourPrep.Modules.Meeting.Presentation.csproj" />
+    <ProjectReference Include="..\FourPrep.Modules.Meeting.Auth\FourPrep.Modules.Meeting.Auth.csproj" />
+    <ProjectReference Include="..\FourPrep.Modules.Meeting.Student\FourPrep.Modules.Meeting.Student.csproj" />
   </ItemGroup>
 </Project>
