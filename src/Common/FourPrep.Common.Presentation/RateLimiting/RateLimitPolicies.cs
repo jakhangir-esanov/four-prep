@@ -7,4 +7,5 @@ public static class RateLimitPolicies
     public const string FileUpload = "file-upload";
     public const string Booking = "booking";
     public const string Messaging = "messaging";
+    public const string LinkCode = "link-code";
 }

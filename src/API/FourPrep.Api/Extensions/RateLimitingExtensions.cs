@@ -12,11 +12,13 @@ internal static class RateLimitingExtensions
     private const int FileUploadPermitLimit = 20;
     private const int BookingPermitLimit = 20;
     private const int MessagingPermitLimit = 30;
+    private const int LinkCodePermitLimit = 10;
     private static readonly TimeSpan EmailWindow = TimeSpan.FromMinutes(15);
     private static readonly TimeSpan PublicReadWindow = TimeSpan.FromMinutes(1);
     private static readonly TimeSpan FileUploadWindow = TimeSpan.FromMinutes(1);
     private static readonly TimeSpan BookingWindow = TimeSpan.FromHours(1);
     private static readonly TimeSpan MessagingWindow = TimeSpan.FromMinutes(1);
+    private static readonly TimeSpan LinkCodeWindow = TimeSpan.FromHours(1);
 
     public static IServiceCollection AddRateLimitPolicies(this IServiceCollection services)
     {
@@ -45,6 +47,8 @@ internal static class RateLimitingExtensions
                     MessagingPermitLimit,
                     MessagingWindow));
 
+            options.AddPolicy(RateLimitPolicies.LinkCode, httpContext =>
+                FixedWindowPerClient(httpContext, LinkCodePermitLimit, LinkCodeWindow));
         });
     }
 

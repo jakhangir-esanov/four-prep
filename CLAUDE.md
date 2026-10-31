@@ -194,7 +194,7 @@ What Common has today:
 | Localization | `Countries`, `Currencies` (ISO 4217), `Locales`, `PhoneNumbers`, `LocalizedTexts` (text in `en`/`uz`/`ru`), `LocalizationErrors` |
 | Validation | `RuleBuilderExtensions`: `WithError`, `CountryCode`, `CurrencyCode`, `TimeZoneId`, `Locale`, `PhoneNumber`, `LocalizedText` (English required once translated), `LocalizedTextInAnyLanguage`; `ExamScores` (valid score per `Exam`) |
 | Authorization | `Roles`, `Policies`, JWT + Keycloak role mapping |
-| Presentation | `IEndpoint`, `AddEndpoints`/`MapEndpoints`, `ApiResults.ToResponse`, `RateLimitPolicies` (`Email`, `PublicRead`, `FileUpload`, `Booking`, `Messaging`) |
+| Presentation | `IEndpoint`, `AddEndpoints`/`MapEndpoints`, `ApiResults.ToResponse`, `RateLimitPolicies` (`Email`, `PublicRead`, `FileUpload`, `Booking`, `Messaging`, `LinkCode`) |
 | Shared enums | `Exam`, `DegreeLevel`, `IntakeTerm`, `SatPolicy`, `ScholarshipKind` |
 | Exceptions | `ApplicationException` |
 

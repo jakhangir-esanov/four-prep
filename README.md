@@ -82,7 +82,7 @@ Foydalanuvchi paneli mehmon uchun ham ishlaydi: katalog, kurslar, yangiliklar ka
 ## O'quvchi, ota-ona va mentor
 
 - **Profil.** `student` rolini olgan har bir hisob (o'zi ro'yxatdan o'tgan yoki admin yaratgan) uchun Student modulida bo'sh profil va 8 belgili bog'lash kodi ochiladi. Profil yaratilmasa, Keycloak hisobi ham o'chiriladi.
-- **Ota-onani bog'lash.** O'quvchi kodni `GET /students/me` dan ko'radi va ota-onasiga beradi. Ota-ona kodni `POST /parents/me/students` ga yuboradi. Bitta o'quvchiga ko'pi bilan 4 ta ota-ona bog'lanadi. O'quvchi `POST /students/me/link-code` bilan yangi kod olsa, eski kod ishlamay qoladi. Kodni faqat o'quvchining o'zi ko'radi: admin uchun `GET /students/{id}` va ro'yxatlarda `linkCode` maydoni yo'q, chunki kodga ega har qanday ota-ona hisobi o'zini o'quvchiga bog'lay oladi.
+- **Ota-onani bog'lash.** O'quvchi kodni `GET /students/me` dan ko'radi va ota-onasiga beradi. Ota-ona kodni `POST /parents/me/students` ga yuboradi. Bitta IP'dan soatiga 10 ta urinishga ruxsat bor (`RateLimitPolicies.LinkCode`, oshsa `429`), chunki kodni topgan odam bolaning profili va butun yozishmasini ko'radi. Bitta o'quvchiga ko'pi bilan 4 ta ota-ona bog'lanadi. O'quvchi `POST /students/me/link-code` bilan yangi kod olsa, eski kod ishlamay qoladi. Kodni faqat o'quvchining o'zi ko'radi: admin uchun `GET /students/{id}` va ro'yxatlarda `linkCode` maydoni yo'q, chunki kodga ega har qanday ota-ona hisobi o'zini o'quvchiga bog'lay oladi.
 - **Mentor.** `mentor_admin` `PUT /students/{id}/mentor` bilan faqat `mentor` rolidagi foydalanuvchini biriktira oladi. Mentor o'z o'quvchilarini `GET /mentors/me/students` orqali ko'radi.
 - **Modullararo chaqiruvlar.** Ular tofan'dagidek adapter loyihalar orqali o'tadi: `FourPrep.Modules.Auth.Student` (register → profil) va `FourPrep.Modules.Student.Auth` (mentor rolini tekshirish).
 
@@ -333,7 +333,7 @@ Chat o'quvchi va oilasini 4Prep xodimlari bilan bog'laydi. Har o'quvchida ikkita
 | `ChatMessage` | thread'dagi xabar: kim yozgani (`senderUserId`, nusxalangan `senderName`), tomoni (`1` oila, `2` xodim), matn, vaqti |
 | `ChatReadMark` | foydalanuvchi thread'ni oxirgi marta qachon o'qigani. O'qilmagan xabarlar soni shundan hisoblanadi |
 
-**Endpoint'lar.** `{kind}` — `Mentor` yoki `Support` (aynan shu yozilishda) yoki `1`, `2`. Boshqa yozilish (`support`) hozircha `500` qaytaradi: host binding xatolarini `400` ga aylantirmaydi.
+**Endpoint'lar.** `{kind}` — `Mentor` yoki `Support` (aynan shu yozilishda) yoki `1`, `2`. Boshqa yozilish (`support`) `400 General.InvalidRequest` qaytaradi.
 
 - O'quvchi va ota-ona (`Policies.StudentOrParent`, faqat o'z hisobi yoki bog'langan farzand, boshqasi `403 ChatThread.NotYourStudent`):
   - `GET /chat/students/{studentUserId}/threads` — ikkala thread: oxirgi xabar (200 belgigacha), uni kim yozgani, vaqti, o'qilmaganlar soni, `canWrite`. Hali xabar bo'lmagan thread `id: null` bilan qaytadi.
@@ -509,3 +509,4 @@ Kodda izoh yozilmaydi (`CLAUDE.md`, 6.9.1). Kodning o'zidan ko'rinmaydigan sabab
 - **Keycloak atributlari.** Yangilashda Keycloak hisobdagi barcha atributlarni almashtiradi. Shuning uchun yangilash hisobdagi mavjud qiymatlardan (`UserAttributes.Of`) boshlanadi, aks holda tegilmagan atributlar o'chib ketadi.
 - **Username kichik harfda.** Keycloak username'ni kichik harfda saqlaydi. O'quvchi profili ham shunday yoziladi, shunda u token'dagi `preferred_username` bilan mos keladi.
 - **Bog'lash kodi.** Kodda `0`/`O` va `1`/`I`/`L` yo'q: ota-ona uni o'quvchi ekranidan qo'lda teradi.
+- **Kutilmagan xatolar.** So'rovni bog'lab bo'lmasa (buzilgan JSON, noto'g'ri guid yoki enum qiymati, yo'q majburiy maydon), javob `400 General.InvalidRequest` bo'ladi va log'ga warning yoziladi. Boshqa kutilmagan xato `500 General.Unexpected` qaytaradi. Exception matni faqat log'da qoladi, javobga chiqmaydi, chunki unda ustun va constraint nomlari bo'lishi mumkin.

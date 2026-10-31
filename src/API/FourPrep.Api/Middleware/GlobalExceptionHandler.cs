@@ -17,29 +17,53 @@ internal sealed class GlobalExceptionHandler(ILogger<GlobalExceptionHandler> log
         Exception exception,
         CancellationToken cancellationToken)
     {
-        logger.LogError(exception, "Unhandled exception occurred");
+        ProblemDetails problemDetails;
 
-        var problemDetails = IsConcurrentWrite(exception)
-            ? new ProblemDetails
-            {
-                Status = StatusCodes.Status409Conflict,
-                Type = "https://datatracker.ietf.org/doc/html/rfc7231#section-6.5.8",
-                Title = Error.DuplicateKey.Code,
-                Detail = Error.DuplicateKey.Message,
-                Extensions = { [ApiResults.MessagesExtension] = Error.DuplicateKey.Messages }
-            }
-            : new ProblemDetails
-            {
-                Status = StatusCodes.Status500InternalServerError,
-                Type = "https://datatracker.ietf.org/doc/html/rfc7231#section-6.6.1",
-                Title = exception.Message,
-                Extensions = { [ApiResults.MessagesExtension] = Error.Unexpected.Messages }
-            };
+        if (exception is BadHttpRequestException badRequest)
+        {
+            logger.LogWarning(exception, "Request could not be bound");
+            problemDetails = InvalidRequest(badRequest.StatusCode);
+        }
+        else
+        {
+            logger.LogError(exception, "Unhandled exception occurred");
+            problemDetails = IsConcurrentWrite(exception) ? ConcurrentWrite() : Unexpected();
+        }
 
         await Results.Problem(problemDetails).ExecuteAsync(httpContext);
 
         return true;
     }
+
+    private static ProblemDetails InvalidRequest(int statusCode) =>
+        new()
+        {
+            Status = statusCode,
+            Type = "https://datatracker.ietf.org/doc/html/rfc7231#section-6.5.1",
+            Title = Error.InvalidRequest.Code,
+            Detail = Error.InvalidRequest.Message,
+            Extensions = { [ApiResults.MessagesExtension] = Error.InvalidRequest.Messages }
+        };
+
+    private static ProblemDetails ConcurrentWrite() =>
+        new()
+        {
+            Status = StatusCodes.Status409Conflict,
+            Type = "https://datatracker.ietf.org/doc/html/rfc7231#section-6.5.8",
+            Title = Error.DuplicateKey.Code,
+            Detail = Error.DuplicateKey.Message,
+            Extensions = { [ApiResults.MessagesExtension] = Error.DuplicateKey.Messages }
+        };
+
+    private static ProblemDetails Unexpected() =>
+        new()
+        {
+            Status = StatusCodes.Status500InternalServerError,
+            Type = "https://datatracker.ietf.org/doc/html/rfc7231#section-6.6.1",
+            Title = Error.Unexpected.Code,
+            Detail = Error.Unexpected.Message,
+            Extensions = { [ApiResults.MessagesExtension] = Error.Unexpected.Messages }
+        };
 
     private static bool IsConcurrentWrite(Exception exception)
     {

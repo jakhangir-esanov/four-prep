@@ -35,8 +35,9 @@ Real risks, in order:
   `super_admin`. Nobody else, including other parents of other children and teachers.
 - The link code is shown to the student only (`GET /students/me`). Never put it in a parent, mentor or
   list response, a log, or an error message. Regenerating it must invalidate the old one.
-- `POST /parents/me/students` has no rate limit today. Any change that makes codes easier to guess
-  (shorter, fewer characters, reusable) adds one first.
+- `POST /parents/me/students` allows 10 attempts per hour per IP (`RateLimitPolicies.LinkCode`),
+  because a linked parent reads the child's profile and whole chat history. Any change that makes codes
+  easier to guess (shorter, fewer characters, reusable) tightens it first.
 - Self-service sign-up (`/auth/register`, `/auth/register-parent`, `/auth/google`) grants only
   `student` or `parent`. Staff are created by `super_admin` through `POST /admin/users`.
 - Google sign-in:

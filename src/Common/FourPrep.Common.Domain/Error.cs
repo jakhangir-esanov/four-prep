@@ -22,6 +22,12 @@ public record Error
         uz: "Yozuv shu vaqtning o'zida boshqa so'rov tomonidan yozildi. Qaytadan urinib ko'ring.",
         ru: "Запись была одновременно изменена другим запросом. Попробуйте ещё раз.");
 
+    public static readonly Error InvalidRequest = Problem(
+        "General.InvalidRequest",
+        en: "The request could not be read. Check the address and the values you sent.",
+        uz: "So'rovni o'qib bo'lmadi. Manzil va yuborilgan qiymatlarni tekshiring.",
+        ru: "Не удалось прочитать запрос. Проверьте адрес и отправленные значения.");
+
     public Error(string code, LocalizedMessage messages, ErrorType type)
     {
         Code = code;
