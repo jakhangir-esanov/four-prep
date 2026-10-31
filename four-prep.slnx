@@ -96,6 +96,7 @@
     <Project Path="src/Modules/Chat/FourPrep.Modules.Chat.Domain/FourPrep.Modules.Chat.Domain.csproj" />
     <Project Path="src/Modules/Chat/FourPrep.Modules.Chat.Infrastructure/FourPrep.Modules.Chat.Infrastructure.csproj" />
     <Project Path="src/Modules/Chat/FourPrep.Modules.Chat.Presentation/FourPrep.Modules.Chat.Presentation.csproj" />
+    <Project Path="src/Modules/Chat/FourPrep.Modules.Chat.Student/FourPrep.Modules.Chat.Student.csproj" />
   </Folder>
   <Folder Name="/src/Modules/Chat/test/">
     <Project Path="src/Modules/Chat/test/FourPrep.Modules.Chat.ArchitectureTests/FourPrep.Modules.Chat.ArchitectureTests.csproj" />

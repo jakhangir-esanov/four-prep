@@ -57,7 +57,7 @@ Har bir modul o'z PostgreSQL sxemasiga ega va boshqa modulga faqat adapter orqal
 | Payment | invoice, to'lovlar, to'lov tizimining webhook'i | skeleton |
 | Meeting | konsultatsiyalar, xodimlarning bo'sh vaqtlari, uchrashuv havolalari (Zoom/Meet), mock interview | konsultatsiya tayyor: xodim jadvali, bo'sh vaqtlar, bron, bekor qilish, qatnashuv |
 | AI | AI Counselor, plan wizard va My Plan, haftalik check-in | skeleton |
-| Chat | suhbatlar va xabarlar | skeleton |
+| Chat | suhbatlar va xabarlar | mentor va support thread'lari tayyor: xabar yuborish, o'qish, o'qilmaganlar, xodim navbati |
 | Notification | ilova ichidagi, email va Telegram bildirishnomalari | skeleton |
 | Storage | faqat fayl baytlari: obyektlar, yuklash va yuklab olish uchun imzolangan havolalar, o'chirish | tayyor: yuklash, tasdiqlash, ClamAV tekshiruvi, yuklab olish, boshqa modullar uchun API |
 | Audit | barcha modullardagi muhim amallarning faqat qo'shiladigan (append-only) jurnali; hech qachon o'chirilmaydi | skeleton |
@@ -320,6 +320,44 @@ Academy arizasi Lead'ni Applicant qiladi: o'quvchi 4Prep xizmatlariga qiziqishin
 - **Aloqa.** Kamida bitta kanal tanlanadi. Telefon tanlansa xalqaro formatdagi raqam (E.164), Telegram tanlansa username (5–32 belgi, harf bilan boshlanadi, `@` olib tashlanadi) majburiy. Tanlanmagan kanal ma'lumoti saqlanmaydi. Email Keycloak hisobidagi email'dan olinadi, arizada saqlanmaydi. Uchrashuv tili `en`, `uz` yoki `ru`.
 - **Kim nimani ko'radi.** Oila javobida kim ko'rib chiqqani (`reviewedByUserId`) yo'q. O'quvchining ismi yuborish paytida arizaga nusxalanadi, `mentor_admin` ro'yxatni shu ism bo'yicha qidiradi.
 - **Hali yo'q:** yo'nalishlar qadami, arizaga bildirishnoma (Notification bilan), qabul qilinganda o'quvchi bosqichini (stage) o'zgartirish, ota-onaning farzandi nomidan yuborishi. O'quvchi hisobi o'chirilganda uning arizalari Admission'da qoladi; ular event mexanizmi bilan tozalanadi.
+
+## Yozishmalar (Chat)
+
+Chat o'quvchi va oilasini 4Prep xodimlari bilan bog'laydi. Har o'quvchida ikkita thread bor: biri hozirgi mentori bilan, biri support bilan. O'quvchi ham, unga bog'langan har bir ota-ona ham ikkala thread'ni o'qiydi va yoza oladi. O'qituvchi thread'lari, fayl biriktirish va real vaqt (SignalR) keyin qo'shiladi.
+
+**Tuzilishi.**
+
+| Aggregate | Nima |
+|---|---|
+| `ChatThread` | bitta o'quvchining bitta thread'i: `kind` (`1` mentor, `2` support), o'quvchining nusxalangan ismi. Har o'quvchi va tur uchun bittadan (unique indeks) |
+| `ChatMessage` | thread'dagi xabar: kim yozgani (`senderUserId`, nusxalangan `senderName`), tomoni (`1` oila, `2` xodim), matn, vaqti |
+| `ChatReadMark` | foydalanuvchi thread'ni oxirgi marta qachon o'qigani. O'qilmagan xabarlar soni shundan hisoblanadi |
+
+**Endpoint'lar.** `{kind}` — `Mentor` yoki `Support` (aynan shu yozilishda) yoki `1`, `2`. Boshqa yozilish (`support`) hozircha `500` qaytaradi: host binding xatolarini `400` ga aylantirmaydi.
+
+- O'quvchi va ota-ona (`Policies.StudentOrParent`, faqat o'z hisobi yoki bog'langan farzand, boshqasi `403 ChatThread.NotYourStudent`):
+  - `GET /chat/students/{studentUserId}/threads` — ikkala thread: oxirgi xabar (200 belgigacha), uni kim yozgani, vaqti, o'qilmaganlar soni, `canWrite`. Hali xabar bo'lmagan thread `id: null` bilan qaytadi.
+  - `GET /chat/students/{studentUserId}/threads/{kind}/messages?before=&limit=` — xabarlar, yangisi birinchi. `limit` standart 50, 1–100 oralig'iga keltiriladi. Oldingi sahifa uchun `before` ga ro'yxatdagi eng eski xabar id'si beriladi.
+  - `POST /chat/students/{studentUserId}/threads/{kind}/messages` `{ "body" }` — xabar yuboradi, javobda xabar id'si. Thread birinchi xabar bilan ochiladi.
+  - `POST /chat/students/{studentUserId}/threads/{kind}/read` — thread'ni hozirgacha o'qildi deb belgilaydi.
+- Mentor (`Policies.Mentor`, faqat o'zi biriktirilgan o'quvchining mentor thread'i):
+  - `GET /staff/chat/threads?awaitingReply=&unreadOnly=&search=` — o'z o'quvchilarining mentor thread'lari, standart saralash `last_message_on_utc` bo'yicha kamayish tartibida.
+  - `GET /staff/chat/students/{studentUserId}/messages`, `POST /staff/chat/students/{studentUserId}/messages`, `POST /staff/chat/students/{studentUserId}/read`.
+- `mentor_admin` va `super_admin` (`Policies.MentorAdmin`, hamma thread'lar):
+  - `GET /admin/chat/threads?kind=&awaitingReply=&unreadOnly=&search=` — support navbati va hamma mentor thread'lari.
+  - `GET`, `POST /admin/chat/students/{studentUserId}/threads/{kind}/messages`, `POST /admin/chat/students/{studentUserId}/threads/{kind}/read`.
+
+**Qoidalar va qarorlar.**
+
+- **Kim kiradi.** Mentor thread'ini o'quvchi, uning ota-onalari, hozirgi mentori, `mentor_admin` va `super_admin` ko'radi. Support'ni mentor ko'rmaydi. Mentor almashtirilsa, eski mentor thread'ga darrov kira olmay qoladi, yangisi butun tarixni ko'radi. Tekshiruv har so'rovda `FourPrep.Modules.Chat.Student` adapteri orqali Student'dan olinadi (`HasFamilyAccessQuery`, `GetStudentContactQuery`). Mentor navbati uchun Student'ga `GetMenteeUserIdsQuery` qo'shildi.
+- **Mentor hali yo'q.** Mentor biriktirilmagan o'quvchining mentor thread'iga hech kim yoza olmaydi (`409 ChatThread.NoMentor`), `canWrite: false`. Eski xabarlar o'qilaveradi. Mentor tayinlanguncha oila support'ga yozadi.
+- **Xabar.** Faqat matn, bo'sh joylar kesilgandan keyin 1–4000 belgi (`400 ChatMessage.BodyRequired`). Xabar tahrirlanmaydi va o'chirilmaydi. Har foydalanuvchiga daqiqasiga 30 ta xabar ruxsat etiladi (`RateLimitPolicies.Messaging`, oshsa `429`).
+- **Ismlar.** Keycloak hisobida ism yo'q, shuning uchun xabar yozilgan paytdagi ism nusxalanadi: o'quvchining o'zi uchun Student profilidagi ism, ota-ona va xodimlar uchun username. Xodim username'i staff panelga kirish login'i, shuning uchun oila javobida xodim xabarining `senderUserId` va `senderName` maydonlari `null` bo'ladi. Oila faqat `sender: 2` ni ko'radi va uni thread turiga qarab "Mentoringiz" yoki "4Prep support" deb ko'rsatadi (Meeting ham oiladan xodimni yashiradi). Har xabarda `fromMe` bor. Xodimlarning ochiq profillari (Content) paydo bo'lganda xodim ismi ko'rsatilishi mumkin.
+- **Oila ichida maxfiylik yo'q.** O'quvchining ota-onasidan yashirin kanali yo'q: bog'langan har bir ota-ona ikkala thread'ning butun tarixini, jumladan bog'lanishdan oldingi xabarlarni ham ko'radi. Link code'ni olgan begona odam ham shuni ko'radi, shuning uchun link code faqat o'quvchiga ko'rsatiladi.
+- **Matn xom saqlanadi.** Xabar va `lastMessagePreview` HTML sifatida emas, faqat matn sifatida chiqarilishi kerak (oila va staff paneli ikkalasida ham).
+- **O'qilmaganlar.** O'qilmagan xabar — boshqa odam yozgan va foydalanuvchining oxirgi `read` belgisidan keyin kelgan xabar. Har kimning belgisi o'zida: o'quvchi o'qigani ota-ona uchun o'qilgan hisoblanmaydi, bitta `mentor_admin` o'qigani boshqa admin uchun ham. `awaitingReply` — oxirgi xabarni oila yozgan, xodim hali javob bermagan. Xodim navbatda `unreadOnly=true&rows=1` ni so'rasa, `totalCount` yon menyudagi son bo'ladi.
+- **Real vaqt yo'q.** Frontend thread ro'yxatini va ochiq thread'ni so'rab turadi (polling). SignalR va "yangi xabar" bildirishnomasi Notification bilan qo'shiladi.
+- **Hali yo'q:** o'qituvchi thread'lari (Academy bilan), fayl biriktirish (Storage bilan), xodimlarning ichki eslatmalari, SignalR, yangi xabar bildirishnomasi va kundalik digest. O'quvchi hisobi o'chirilganda uning yozishmalari Chat'da qoladi; ular event mexanizmi bilan tozalanadi.
 
 ## Fayllar (Storage)
 

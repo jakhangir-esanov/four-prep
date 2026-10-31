@@ -1,0 +1,6 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="..\FourPrep.Modules.Chat.Application\FourPrep.Modules.Chat.Application.csproj" />
+    <ProjectReference Include="..\..\Student\FourPrep.Modules.Student.Application\FourPrep.Modules.Student.Application.csproj" />
+  </ItemGroup>
+</Project>

@@ -89,7 +89,7 @@ Modules in `src/Modules/`:
 | Payment | invoices, payments, the payment provider's webhook | skeleton |
 | Meeting | consultations, staff availability, meeting links (Zoom/Meet, not hosted by us), mock interviews | implemented (staff schedules, free slots, consultation booking, cancel, attendance) |
 | AI | AI Counselor, plan wizard and My Plan, weekly check-in | skeleton |
-| Chat | threads and messages | skeleton |
+| Chat | threads and messages | implemented (mentor and support threads, text messages, read marks, staff inboxes) |
 | Notification | in-app, email and Telegram notifications | skeleton |
 | Storage | file bytes only: objects, signed upload and download links, deletes | implemented (signed upload, confirm, ClamAV scan, signed download, file lookup, publish to the public bucket and purge for other modules, abandoned-upload cleanup) |
 | Audit | the append-only log of sensitive actions from every module; never purged | skeleton |
@@ -134,6 +134,8 @@ Existing examples:
   (`IAuthService` → `GetUserRolesQuery`)
 - `FourPrep.Modules.Admission.Student` — Admission checks family access and reads the student's name and date of birth
   (`IStudentService` → `HasFamilyAccessQuery`, `GetStudentContactQuery`)
+- `FourPrep.Modules.Chat.Student` — Chat checks family access, reads the student's name and mentor, and lists a mentor's students
+  (`IStudentService` → `HasFamilyAccessQuery`, `GetStudentContactQuery`, `GetMenteeUserIdsQuery`)
 
 Never query another module's schema with SQL, and never share entities between modules.
 
@@ -192,7 +194,7 @@ What Common has today:
 | Localization | `Countries`, `Currencies` (ISO 4217), `Locales`, `PhoneNumbers`, `LocalizedTexts` (text in `en`/`uz`/`ru`), `LocalizationErrors` |
 | Validation | `RuleBuilderExtensions`: `WithError`, `CountryCode`, `CurrencyCode`, `TimeZoneId`, `Locale`, `PhoneNumber`, `LocalizedText` (English required once translated), `LocalizedTextInAnyLanguage`; `ExamScores` (valid score per `Exam`) |
 | Authorization | `Roles`, `Policies`, JWT + Keycloak role mapping |
-| Presentation | `IEndpoint`, `AddEndpoints`/`MapEndpoints`, `ApiResults.ToResponse`, `RateLimitPolicies` (`Email`, `PublicRead`, `FileUpload`, `Booking`) |
+| Presentation | `IEndpoint`, `AddEndpoints`/`MapEndpoints`, `ApiResults.ToResponse`, `RateLimitPolicies` (`Email`, `PublicRead`, `FileUpload`, `Booking`, `Messaging`) |
 | Shared enums | `Exam`, `DegreeLevel`, `IntakeTerm`, `SatPolicy`, `ScholarshipKind` |
 | Exceptions | `ApplicationException` |
 
