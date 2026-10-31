@@ -34,6 +34,7 @@
     <Project Path="src/Modules/Admission/FourPrep.Modules.Admission.Domain/FourPrep.Modules.Admission.Domain.csproj" />
     <Project Path="src/Modules/Admission/FourPrep.Modules.Admission.Infrastructure/FourPrep.Modules.Admission.Infrastructure.csproj" />
     <Project Path="src/Modules/Admission/FourPrep.Modules.Admission.Presentation/FourPrep.Modules.Admission.Presentation.csproj" />
+    <Project Path="src/Modules/Admission/FourPrep.Modules.Admission.Student/FourPrep.Modules.Admission.Student.csproj" />
   </Folder>
   <Folder Name="/src/Modules/Admission/test/">
     <Project Path="src/Modules/Admission/test/FourPrep.Modules.Admission.ArchitectureTests/FourPrep.Modules.Admission.ArchitectureTests.csproj" />

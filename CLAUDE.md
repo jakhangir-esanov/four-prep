@@ -84,7 +84,7 @@ Modules in `src/Modules/`:
 | Catalogue | universities, programs, admission requirements, costs, deadlines, scholarships, destination countries; every fact carries its source | implemented (manual entry, CSV import, public search) |
 | Content | news, results, partners, About, public staff profiles | implemented (news posts with covers, publish and public reads) |
 | Academy | courses, class groups, enrolments, attendance, mock scores, placement tests | implemented (courses, class groups, public course pages, enrolment and waitlist with manual activation) |
-| Admission | academy application, university applications, portal accounts, essays, recommendations, university offers, visa | skeleton |
+| Admission | academy application, university applications, portal accounts, essays, recommendations, university offers, visa | implemented (academy application: submit, withdraw, review by mentor_admin) |
 | Agreement | products, offers and discounts, agreements, signatures | skeleton |
 | Payment | invoices, payments, the payment provider's webhook | skeleton |
 | Meeting | consultations, staff availability, meeting links (Zoom/Meet, not hosted by us), mock interviews | implemented (staff schedules, free slots, consultation booking, cancel, attendance) |
@@ -132,6 +132,8 @@ Existing examples:
   (`IStudentService` → `HasFamilyAccessQuery`, `GetStudentContactQuery`)
 - `FourPrep.Modules.Meeting.Auth` — Meeting checks that a booked staff member still holds a consultant role
   (`IAuthService` → `GetUserRolesQuery`)
+- `FourPrep.Modules.Admission.Student` — Admission checks family access and reads the student's name and date of birth
+  (`IStudentService` → `HasFamilyAccessQuery`, `GetStudentContactQuery`)
 
 Never query another module's schema with SQL, and never share entities between modules.
 

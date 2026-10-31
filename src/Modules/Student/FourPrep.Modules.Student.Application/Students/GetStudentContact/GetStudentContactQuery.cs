@@ -17,7 +17,8 @@ internal sealed class GetStudentContactQueryHandler(IDbConnectionFactory dbConne
             s.user_id AS {nameof(StudentContactResponse.UserId)},
             COALESCE(NULLIF(TRIM(CONCAT_WS(' ', s.first_name, s.last_name)), ''), s.user_name)
                 AS {nameof(StudentContactResponse.DisplayName)},
-            s.mentor_user_id AS {nameof(StudentContactResponse.MentorUserId)}
+            s.mentor_user_id AS {nameof(StudentContactResponse.MentorUserId)},
+            s.date_of_birth AS {nameof(StudentContactResponse.DateOfBirth)}
         FROM student.students s
         WHERE s.user_id = @StudentUserId
         """;

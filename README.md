@@ -52,7 +52,7 @@ Har bir modul o'z PostgreSQL sxemasiga ega va boshqa modulga faqat adapter orqal
 | Catalogue | universitetlar, dasturlar, qabul talablari, narxlar, muddatlar, grantlar, yo'nalish davlatlari | tayyor: qo'lda kiritish, CSV import, ochiq qidiruv |
 | Content | yangiliklar, natijalar (results), hamkorlar, About, xodimlarning ochiq profillari | yangiliklar tayyor: muqova rasmi, e'lon qilish, ochiq o'qish |
 | Academy | kurslar, guruhlar, yozilish, davomat, mock ballar, placement test | kurslar, guruhlar, yozilish va navbat tayyor (to'lovsiz) |
-| Admission | academy arizasi, universitetlarga arizalar, portal akkauntlari, essay, tavsiyanomalar, universitet offerlari, viza | skeleton |
+| Admission | academy arizasi, universitetlarga arizalar, portal akkauntlari, essay, tavsiyanomalar, universitet offerlari, viza | academy arizasi tayyor: yuborish, qaytarib olish, ko'rib chiqish |
 | Agreement | mahsulotlar, offer va chegirmalar, shartnomalar, imzolar | skeleton |
 | Payment | invoice, to'lovlar, to'lov tizimining webhook'i | skeleton |
 | Meeting | konsultatsiyalar, xodimlarning bo'sh vaqtlari, uchrashuv havolalari (Zoom/Meet), mock interview | konsultatsiya tayyor: xodim jadvali, bo'sh vaqtlar, bron, bekor qilish, qatnashuv |
@@ -287,6 +287,39 @@ Meeting bepul 45 daqiqalik konsultatsiyani (o'quvchi yo'lining 1-bosqichi) bron 
 - **Qatnashuv.** Uchrashuv boshlangandan keyin xodim uni `Held` (3) yoki `NoShow` (4) deb belgilaydi va keyin tuzatishi mumkin. Xodimning izohi (`staffNotes`) faqat xodimlarga ko'rinadi.
 - **Kim nimani ko'radi.** Oila javobida xodimning id'si, izohi va kim bron qilgani yo'q, faqat `bookedByMe`. Havola faqat rejadagi uchrashuvda ko'rsatiladi. Xodim uchrashuvda o'quvchining ko'rinadigan ismini (ism-familiya, bo'lmasa username) va telefon uchrashuvida telefonini ko'radi. Telefon raqami uchrashuv bekor qilinishi yoki qatnashuv belgilanishi bilan o'chiriladi. Bu ism bron paytida Meeting'ga nusxalanadi, chunki mentori bo'lmagan konsultant Student profilini o'qiy olmaydi. Oila shu xodim bilan bron qilib, ismini unga o'zi beradi; xodim profilning qolgan qismini (tug'ilgan sana, maktab, davlat) ko'rmaydi.
 - **Hali yo'q:** natija formasi (yo'nalish, davlatlar, yo'l, keyingi qadam) va o'quvchi bosqichini o'zgartirish (Student/Admission bilan), 24 va 1 soat oldingi eslatmalar (Notification bilan), boshqa uchrashuv turlari, ko'chirish (hozir bekor qilib qayta bron qilinadi). O'quvchi hisobi o'chirilganda uning uchrashuvlari va nusxalangan ismi Meeting'da qoladi. Ular event mexanizmi bilan tozalanadi.
+
+## Academy arizasi (Admission)
+
+Academy arizasi Lead'ni Applicant qiladi: o'quvchi 4Prep xizmatlariga qiziqishini, hozirgi ballarini va qanday bog'lanish qulayligini yuboradi, `mentor_admin` uni ko'rib chiqadi. Admission'ning qolgan qismi (universitetlarga arizalar, portal akkauntlari, essay, tavsiyanomalar, offerlar, viza) keyin qo'shiladi.
+
+**Tuzilishi.**
+
+| Aggregate | Ichidagilar | Nima |
+|---|---|---|
+| `AcademyApplication` | `ReportedScore` | bitta ariza: qiziqishlar (`1` qabul paketi, `2` test-prep, `3` kurslar), o'quvchi o'zi kiritgan ballar, aloqa kanallari (`1` email, `2` telefon, `3` Telegram), telefon, Telegram username, uchrashuv tili, erkin savol, ota-ona roziligi, holati (`1` yuborilgan, `2` qabul qilingan, `3` rad etilgan, `4` qaytarib olingan) |
+
+**Endpoint'lar.**
+
+- O'quvchi (`Policies.Student`):
+  - `POST /academy-applications` `{ "interests": [1, 2], "scores": [{ "exam", "score" }], "contactChannels": [1, 3], "phoneNumber", "telegramUsername", "meetingLanguage": "uz", "question", "parentConsentConfirmed" }` — arizani yuboradi, javobda ariza id'si.
+  - `POST /academy-applications/{id}/withdraw` — yuborilgan (hali ko'rib chiqilmagan) arizani qaytarib oladi. Begonasi `404`.
+- O'quvchi va ota-ona (`Policies.StudentOrParent`):
+  - `GET /academy-applications?studentUserId=` — o'quvchining hamma arizalari, yangisi birinchi. Faqat o'quvchining o'zi va bog'langan ota-onasi (`403 AcademyApplication.NotYourStudent`).
+- `mentor_admin` va `super_admin` (`Policies.MentorAdmin`):
+  - `GET /admin/academy-applications?status=&interest=&studentUserId=&search=` — pipeline ro'yxati, standart saralash `submitted_on_utc` bo'yicha kamayish tartibida.
+  - `GET /admin/academy-applications/{id}` — to'liq ariza.
+  - `POST /admin/academy-applications/{id}/accept`, `POST /admin/academy-applications/{id}/decline` `{ "reason" }`.
+
+**Qoidalar va qarorlar.**
+
+- **Bir marta yuboriladi.** Frontend 4 qadamni o'zida ushlaydi va oxirida bitta `POST` yuboradi, serverda qoralama yo'q. O'quvchining ism-familiyasi, tug'ilgan sanasi va maktabi Student profilida turadi (`PUT /students/me`), arizada takrorlanmaydi. Spec'dagi "yo'nalishlar" (davlatlar, daraja, intake) qadami hozircha arizada yo'q.
+- **Ballar o'quvchining so'zi.** Ballar arizada nusxa sifatida saqlanadi va ular rasmiy emas: English gate uchun rasmiy ballni keyin mentor Student'ga kiritadi. Har imtihon bir martadan, ko'pi bilan 4 ta, har biri o'sha imtihon shkalasida (`ExamScores`).
+- **Bitta ochiq ariza.** O'quvchida bir vaqtda bitta yuborilgan yoki qabul qilingan ariza bo'ladi (`409 AcademyApplication.AlreadyApplied`, bazada qisman unique indeks ham bor). Rad etilgan yoki qaytarib olingandan keyin qayta yuborish mumkin. `POST /academy-applications` ga bitta IP'dan soatiga 20 ta so'rov ruxsat etiladi (`RateLimitPolicies.Booking`, oshsa `429`).
+- **Holatlar.** Faqat yuborilgan ariza qabul qilinadi, rad etiladi yoki qaytarib olinadi, boshqasi `409 AcademyApplication.NotSubmitted`. Kim va qachon ko'rib chiqqani saqlanadi. Ariza qatorida `xmin` versiyasi bor: `mentor_admin` qabul qilayotgan paytda o'quvchi qaytarib olsa, ikkinchisi `409 Conflict.DuplicateKey` oladi. Rad etish sababi majburiy va oilaga ko'rinadi, shuning uchun u oilaga yozilgan matn bo'lishi kerak. Qabul qilish hozircha faqat holatni o'zgartiradi: mentor biriktirish Student'da (`PUT /students/{id}/mentor`), konsultatsiya Meeting'da qoladi.
+- **Voyaga yetmaganlar.** 18 yoshga to'lmagan o'quvchi "ota-onam xabardor va rozi" ni belgilashi shart (`400 AcademyApplication.ParentConsentRequired`). Yosh Student profilidagi tug'ilgan sanadan o'quvchining o'z vaqt zonasidagi bugungi kun bo'yicha hisoblanadi (`FourPrep.Modules.Admission.Student` adapteri, `GetStudentContactQuery`). Tug'ilgan sana kiritilmagan bo'lsa, o'quvchi voyaga yetmagan deb hisoblanadi. Bog'langan ota-ona ariza vaqtida shart emas. 18 hamma davlatda ham voyaga yetish yoshi emas; boshqa chegara kerak bo'lsa, `StudentAge` dagi qiymat o'zgaradi.
+- **Aloqa.** Kamida bitta kanal tanlanadi. Telefon tanlansa xalqaro formatdagi raqam (E.164), Telegram tanlansa username (5–32 belgi, harf bilan boshlanadi, `@` olib tashlanadi) majburiy. Tanlanmagan kanal ma'lumoti saqlanmaydi. Email Keycloak hisobidagi email'dan olinadi, arizada saqlanmaydi. Uchrashuv tili `en`, `uz` yoki `ru`.
+- **Kim nimani ko'radi.** Oila javobida kim ko'rib chiqqani (`reviewedByUserId`) yo'q. O'quvchining ismi yuborish paytida arizaga nusxalanadi, `mentor_admin` ro'yxatni shu ism bo'yicha qidiradi.
+- **Hali yo'q:** yo'nalishlar qadami, arizaga bildirishnoma (Notification bilan), qabul qilinganda o'quvchi bosqichini (stage) o'zgartirish, ota-onaning farzandi nomidan yuborishi. O'quvchi hisobi o'chirilganda uning arizalari Admission'da qoladi; ular event mexanizmi bilan tozalanadi.
 
 ## Fayllar (Storage)
 
